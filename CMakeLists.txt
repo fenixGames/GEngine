@@ -19,5 +19,5 @@ set_property(TARGET glut PROPERTY IMPORTED_LOCATION /usr/local/lib/libglut.so)
 add_subdirectory("./src")
 
 # Add the libgengine.so target to be linked with the src objects and linked with gl and glut
-add_library(gengine SHARED $<TARGET_OBJECTS:display>)
+add_library(gengine SHARED $<TARGET_OBJECTS:display> $<TARGET_OBJECTS:geometry>)
 target_link_libraries(gengine GL glut)
