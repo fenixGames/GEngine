@@ -2,7 +2,8 @@
 #include <math.h>
 #include <GL/glut.h>
 
-#define POINT_PREC  18000.0f
+#define POINT_PREC  180.0f
+#define PI  M_PI
 /**
  * Static function to make the transformation between the points and the screen.
  *
@@ -145,11 +146,11 @@ Arc2D::Arc2D(Point2D c, Point2D s, GLfloat a)
     this->angle = a;
 
     /* The angle must be defined between 0 and 2 * PI, so we calculate the equivalent one. */
-    while (this->angle > 2 * PI + 0.00001)
-        this->angle -= 2 * PI;
+    while (this->angle > 360.0f)
+        this->angle -= 360.0f;
 
     while (this->angle < 0)
-        this->angle += 2 * PI;
+        this->angle += 360.0f;
 }
 
 /**
@@ -170,9 +171,12 @@ Arc2D::print() {
         ang = 3 * PI / 2;
 
     /* Calculating and printing the required points. */
-    //glViewport(this->center.x - rad, this->center.y - rad, 2 * rad, 2 * rad);
-    glBegin(GL_LINE_STRIP);
-    while (ang < this->angle) {
+	if (this->angle == 360.0f)
+		glBegin(GL_LINE_LOOP);
+	else
+	    glBegin(GL_LINE_STRIP);
+
+    while (ang < this->angle * PI / 180.0f) {
         vpx = rad * cos(ang) + this->center.x;
         vpy = rad * sin(ang) + this->center.y;
 
@@ -209,8 +213,8 @@ Arc2D::getEnd()
         sangle = 3 * PI / 2;
 
     /* Getting the coordinates of the new point. */
-    x = this->center.x + radius * cos(sangle + this->angle);
-    y = this->center.y + radius * sin(sangle + this->angle);
+    x = this->center.x + radius * cos(sangle + (this->angle * PI / 180.0f));
+    y = this->center.y + radius * sin(sangle + (this->angle * PI / 180.0f));
 
     end = new Point2D(x, y);
 
@@ -251,7 +255,7 @@ Sector2D::print()
 /**
  * Constructor of the circuference, which is an extension of an arc.
  */
-Circunference2D::Circunference2D(Point2D c, GLint radius) : Arc2D(c, Point2D(c.x + radius, c.y), 2 * PI)
+Circunference2D::Circunference2D(Point2D c, GLint radius) : Arc2D(c, Point2D(c.x + radius, c.y), 360.0f)
 {
 }
 
@@ -354,10 +358,10 @@ EllArc2D::EllArc2D(Point2D cen, Point2D st, GLfloat a, GLfloat b, GLfloat ang)
     this->angle = ang;
 
     /* Sanitizing the angle. */
-    while (this->angle > 2 * PI + 0.00001)
-        this->angle -= 2 * PI;
+    while (this->angle > 360.0f)
+        this->angle -= 360.0f;
     while (this->angle < 0)
-        this->angle += 2 * PI;
+        this->angle += 360.0f;
 }
 
 /**
@@ -366,7 +370,7 @@ EllArc2D::EllArc2D(Point2D cen, Point2D st, GLfloat a, GLfloat b, GLfloat ang)
 void
 EllArc2D::print()
 {
-    GLfloat ang_step = PI / POINT_PREC, ang;
+    GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
     GLfloat vpx, vpy;
 
     /* Calculating the initial angle. */
@@ -376,10 +380,14 @@ EllArc2D::print()
         ang = PI / 2.0f;
     else
         ang = 1.5f * PI;
+	end_ang = this->angle * PI / 180.0f;
 
-    glBegin(GL_LINE_STRIP);
+	if (this->angle == 360.0f)
+		glBegin(GL_LINE_LOOP);
+	else
+	    glBegin(GL_LINE_STRIP);
     /* Calculating the points and printing them. */
-    while (ang < this->angle) {
+    while (ang < end_ang) {
         vpx = this->xMod * cos(ang) + this->center.x;
         vpy = this->yMod * sin(ang) + this->center.y;
 
@@ -390,3 +398,77 @@ EllArc2D::print()
     glEnd();
 }
 
+/**
+ * Gets the ending point of the ellipsoidal arc.
+ *
+ * @return The requested point.
+ */
+Point2D *
+EllArc2D::getEnd()
+{
+	GLfloat sangle; /* The starting angle. */
+	GLfloat xcomp, ycomp;
+
+	/* Calculating the starting angle */
+	if (this->start.x != 0)
+		sangle = atan(this->start.y / this->start.x);
+	else if (this->start.y > 0)
+		sangle = PI / 2;
+	else
+		sangle = 1.5 * PI;
+
+	/* Getting the coordinates. */
+	xcomp = this->xMod * cos( sangle + (this->angle * PI / 180.0f)) + this->center.x;
+	ycomp = this->yMod * sin( sangle + (this->angle * PI / 180.0f)) + this->center.y;
+
+	return new Point2D(xcomp, ycomp);
+}
+
+/**
+ * Constructor of the ellipse. Dummy class. 
+ */
+Ellipse2D::Ellipse2D(Point2D center, GLfloat a, GLfloat b) : 
+	EllArc2D(center, Point2D(center.x + a, center.y), a ,b, 360.0f)
+{
+}
+
+/**
+ * Constructor of the regular polygon.
+ *
+ * @param Point2D 	center	The center of the circunscribed circunference.
+ * @param unsigned	sides	The number of sides of the polygon.
+ * @param GLint		rad		The radius of the circunscribed circunference.
+ */
+RegPol2D::RegPol2D(Point2D center, unsigned int sides, GLint rad)
+{
+	GLfloat ang_step;
+	unsigned int idx;
+
+	if (sides == 0)
+		return;
+
+	ang_step = 360.0f / sides;
+
+	for (idx = 0; idx < sides; idx++) {
+		this->pointList.push_back(
+				new Point2D(
+					center.x + rad * cos(idx * ang_step * PI / 180.0f),
+				   	center.y + rad * sin(idx * ang_step * PI / 180.0f)
+					)
+				);
+	}
+}
+
+/**
+ * Constructor of the rectangle.
+ *
+ * @param Point2D	p1	The first point of the rectangle.
+ * @param Point2D 	p2	The second point of the rectangle.
+ */
+Rectangle2D::Rectangle2D(Point2D p1, Point2D p2)
+{
+	this->pointList.push_back(new Point2D(p1.x, p1.y));
+	this->pointList.push_back(new Point2D(p1.x, p2.y));
+	this->pointList.push_back(new Point2D(p2.x, p2.y));
+	this->pointList.push_back(new Point2D(p2.x, p1.y));
+}

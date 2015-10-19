@@ -1,4 +1,5 @@
 #include "display.h"
+#include <string.h>
 //#include "probes.h"
 
 Display *Display::theDisplay = NULL;
@@ -13,33 +14,33 @@ Display *Display::theDisplay = NULL;
  * @param GLuint    x       The horizontal position of the window on the screen.
  * @param GLuint    y       The vertical position of the window on the screen.
  */
-Display::Display(int * argc, char ** argv, GLuint width, GLuint height, GLuint x, GLuint y)
-{
-    /* Setting the components of this class. */
-    this->screen[0] = width;
-    this->screen[1] = height;
-
-    this->position[0] = x;
-    this->position[1] = y;
-
-    this->bgcolor[0] = 1.0f;
-    this->bgcolor[1] = 1.0f;
-    this->bgcolor[2] = 1.0f;
-
-    this->fgcolor[0] = 0.0f;
-    this->fgcolor[1] = 0.0f;
-    this->fgcolor[2] = 0.0f;
-
-    /* Initialazing the title of the window to NULL. */
-    this->title = NULL;
-
-    if (this->theDisplay == NULL) {
-        /* GLUT initialization. */
-        glutInit(argc, argv);
-        
-        this->theDisplay = this;
-    }
-}
+//Display::Display(int * argc, char ** argv, GLuint width, GLuint height, GLuint x, GLuint y)
+//{
+//    /* Setting the components of this class. */
+//    this->screen[0] = width;
+//    this->screen[1] = height;
+//
+//    this->position[0] = x;
+//    this->position[1] = y;
+//
+//    this->bgcolor[0] = 1.0f;
+//    this->bgcolor[1] = 1.0f;
+//    this->bgcolor[2] = 1.0f;
+//
+//    this->fgcolor[0] = 0.0f;
+//    this->fgcolor[1] = 0.0f;
+//    this->fgcolor[2] = 0.0f;
+//
+//    /* Initialazing the title of the window to NULL. */
+//    this->title = NULL;
+//
+//    if (this->theDisplay == NULL) {
+//        /* GLUT initialization. */
+//        glutInit(argc, argv);
+//        
+//        this->theDisplay = this;
+//    }
+//}
 
 /**
  * Inititializes the display class and the main window's size and position.
@@ -51,6 +52,10 @@ Display::Display(int * argc, char ** argv, GLuint width, GLuint height, GLuint x
  */
 Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
 {
+	char *argv[1];
+	char dummyString[8];
+	int argc = 1;
+
     /* Setting the components of this class. */
     this->screen[0] = width;
     this->screen[1] = height;
@@ -68,6 +73,14 @@ Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
 
     /* Initialazing the title of the window to NULL. */
     this->title = NULL;
+
+	if (this->theDisplay == NULL) {
+		/* GLUT initialization. */
+		argv[0] = dummyString;
+		glutInit(&argc, argv);
+
+		this->theDisplay = this;
+	}
 }
 
 /**

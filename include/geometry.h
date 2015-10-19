@@ -12,7 +12,6 @@
 #include <GL/gl.h>
 
 #define Point2DList std::list<Point2D *>
-#define PI  3.141592653589793
 
 /**
  * The abstract class for the printable objects.
@@ -20,6 +19,7 @@
 class Figure {
     protected:
         bool solid; /* Indicates if the figure has solid color. */
+		GLfloat rotAngle; /* The angle used to rotate the Figure. */
     public:
         Figure();
 
@@ -28,6 +28,8 @@ class Figure {
 
         /* By default, all the figures are wired figures, with this, they will be solid. */
         void setSolid();
+
+		/* TODO Rotation and translation. */
 };
 
 /**
@@ -74,7 +76,7 @@ class Arc2D : public Figure {
         GLfloat angle;  /* The angle associated to the arc. */
 
     public:
-        Arc2D(Point2D c, Point2D s, GLfloat a = 2 * PI);
+        Arc2D(Point2D c, Point2D s, GLfloat a = 360.0f);
 
         /* Gets the ending point of the arc. */
         Point2D * getEnd();
@@ -88,7 +90,7 @@ class Arc2D : public Figure {
  */
 class Sector2D : public Arc2D {
     public:
-        Sector2D(Point2D c, Point2D s, GLfloat a = 2 * PI);
+        Sector2D(Point2D c, Point2D s, GLfloat a = 360.0f);
 
         /* Prints the sector. */
         void print();
@@ -146,10 +148,43 @@ class EllArc2D : public Figure {
                 yMod;   /* The modifier of the Y component of the ellipse. */
         GLfloat angle;  /* The angle of the arc to be drawn. */
     public:
-        EllArc2D(Point2D center, Point2D start, GLfloat a, GLfloat b, GLfloat angle = 2 * PI);
+        EllArc2D(Point2D center, Point2D start, GLfloat a, GLfloat b, GLfloat angle = 360.0f);
 
         /* Prints the ellipsoidal arc on the screen. */
         void print();
+
+		/* Gets the ending point of the ellipsoidal arc. */
+		Point2D * getEnd();
+};
+
+/**
+ * The class to expand the ellipsoidal arc to an ellipse.
+ */
+class Ellipse2D : public EllArc2D {
+	public:
+		Ellipse2D(Point2D center, GLfloat a, GLfloat b);
+};
+
+/**
+ * Creating the regular polygon class.
+ */
+class RegPol2D : public Polygon2D {
+	public:
+		RegPol2D(Point2D center, unsigned int sides, GLint rad);
+};
+
+/**
+ * The rectangle class to draw a rectangle.
+ *
+ * It will be drawn using the following expression:
+ * 	P1 = (P1.x, P1.y)
+ * 	P2 = (P1.x, P2.y)
+ * 	P3 = (P2.x, P2.y)
+ * 	P4 = (P2.x, P1.y)
+ */
+class Rectangle2D : public Polygon2D {
+	public:
+		Rectangle2D(Point2D p1, Point2D p2);
 };
 
 #endif

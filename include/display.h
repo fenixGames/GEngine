@@ -32,7 +32,7 @@ class Display {
         /* The function to draw the screen. */
         static void displayFunc();
     public:
-        Display(int *argc, char **argv, GLuint width, GLuint height, GLuint x = 0, GLuint y = 0);
+//        Display(int *argc, char **argv, GLuint width, GLuint height, GLuint x = 0, GLuint y = 0);
         Display(GLuint width, GLuint height, GLuint x = 0, GLuint y = 0);
 
         /* Prints everything on the screen. */
