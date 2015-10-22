@@ -12,12 +12,19 @@
 #include <GL/glut.h>
 #include "geometry.h"
 
-#define FigureList  std::list<Figure *>
+#ifndef _GENGINE_H
+namespace GEngine {
+    class Display;
+}
+#endif
+
+#define Figure2DList    std::list<D2D::Figure *>
+#define Figure3DList    std::list<D3D::Figure *>
 
 /**
  * The class associated to the display engine whose in charge of printing everything on the screen.
  */
-class Display {
+class GEngine::Display {
     protected:
         GLuint screen[2];   /* Dimensions of the main window. */
         GLuint position[2]; /* Position of the main window. */
@@ -28,11 +35,11 @@ class Display {
         static Display *theDisplay; /* The main screen display. */
         int mainWin;    /* The identifier of the main Window. */
 
-        FigureList  figures;
+        Figure2DList    * figures2D;
+//        Figure3DList    * figures3D; TODO
         /* The function to draw the screen. */
         static void displayFunc();
     public:
-//        Display(int *argc, char **argv, GLuint width, GLuint height, GLuint x = 0, GLuint y = 0);
         Display(GLuint width, GLuint height, GLuint x = 0, GLuint y = 0);
 
         /* Prints everything on the screen. */
@@ -48,22 +55,22 @@ class Display {
         bool setTitle(const char * title);
 
         /* Adds a figure to be drawn to the list of objects to draw. */
-        void addFigure(Figure * figure);
+        void add2DFigure(D2D::Figure * figure);
 
         /* Removes the figure of the list. */
-        void removeFigure(Figure * figure);
+        void remove2DFigure(D2D::Figure * figure);
 
         /* Retrives the figure from the back of the list, removing it. */
-        Figure * popFigure();
+        D2D::Figure * pop2DFigure();
 
         /* Retrives the figure from the beginning of the list, removing it. */
-        Figure * shiftFigure();
+        D2D::Figure * shift2DFigure();
 
         /* Retrives the figure from the front of the list. Does not remove it. */
-        Figure * firstFigure();
+        D2D::Figure * first2DFigure();
 
         /* Retrieves the last figure from the list. It does not remove it. */
-        Figure * lastFigure();
+        D2D::Figure * last2DFigure();
 };
 
 #endif

@@ -1,46 +1,12 @@
 #include "display.h"
 #include <string.h>
-//#include "probes.h"
+
+using namespace GEngine;
 
 Display *Display::theDisplay = NULL;
 
-/**
- * Inititializes the display class and the main window's size and position.
- *
- * @param int       *argc   The pointer to the original number of arguments of the main function.
- * @param char      **argv  The array of arguments passed to the program.
- * @param GLuint    width   The width of the main window for the application.
- * @param GLuint    height  The height of the main window for the application.
- * @param GLuint    x       The horizontal position of the window on the screen.
- * @param GLuint    y       The vertical position of the window on the screen.
- */
-//Display::Display(int * argc, char ** argv, GLuint width, GLuint height, GLuint x, GLuint y)
-//{
-//    /* Setting the components of this class. */
-//    this->screen[0] = width;
-//    this->screen[1] = height;
-//
-//    this->position[0] = x;
-//    this->position[1] = y;
-//
-//    this->bgcolor[0] = 1.0f;
-//    this->bgcolor[1] = 1.0f;
-//    this->bgcolor[2] = 1.0f;
-//
-//    this->fgcolor[0] = 0.0f;
-//    this->fgcolor[1] = 0.0f;
-//    this->fgcolor[2] = 0.0f;
-//
-//    /* Initialazing the title of the window to NULL. */
-//    this->title = NULL;
-//
-//    if (this->theDisplay == NULL) {
-//        /* GLUT initialization. */
-//        glutInit(argc, argv);
-//        
-//        this->theDisplay = this;
-//    }
-//}
+/* Declaring the external static funstions to draw the 2D and 3D figures. */
+extern int print2D(Figure2DList * list, int winId);
 
 /**
  * Inititializes the display class and the main window's size and position.
@@ -71,8 +37,12 @@ Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
     this->fgcolor[1] = 0.0f;
     this->fgcolor[2] = 0.0f;
 
-    /* Initialazing the title of the window to NULL. */
+    /* Initializing the title of the window to NULL. */
     this->title = NULL;
+
+    /* Initializing the lists of figures to NULL. */
+    this->figures2D = NULL;
+    //this->figures3D = NULL; TODO
 
 	if (this->theDisplay == NULL) {
 		/* GLUT initialization. */
@@ -89,15 +59,18 @@ Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
 void
 Display::displayFunc()
 {
-    FigureList::iterator iter;  /* The iterator of the figure list to print them. */
-    FigureList *list;            /* Shortcut for Display::theDisplay->figures */
+    Figure2DList::iterator iter2D;  /* The iterator of the figure list to print them. */
+    Figure2DList *list2D = NULL;    /* Shortcut for Display::theDisplay->figures2D */
+    /* TODO
+    Figure3DList::iterator iter3D;  // The iterator for the 3D figure list to print them.
+    Figure3DList *list3D = NULL;    // Shortcut for Display::theDisplay->figures3D
+    */
 
     /* Getting the figure list. */
-    if (Display::theDisplay != NULL) {
-        list = &Display::theDisplay->figures;
-        iter = list->begin();
-    } else
-        list = NULL;
+    if (Display::theDisplay != NULL && Display::theDisplay->figures2D != NULL) {
+        list2D = Display::theDisplay->figures2D;
+        iter2D = list2D->begin();
+    } 
 
     /* Cleans the screen. */
     glClear(GL_COLOR_BUFFER_BIT);
@@ -116,13 +89,11 @@ Display::displayFunc()
     glEnd();
 #endif
 
-    /* Prints the figures of the list. */
-    for (; list != NULL && iter != list->end(); iter++) {
-        (* iter)->print();
-    }
-
     glPointSize(4.0f);
-
+    /* If the two list are set, print the 3D first, and then the 2D. */
+    /* TODO 3D printing. */
+    /* Prints the 2D figures of the list. */
+    print2D(list2D, Display::theDisplay->mainWin);
 
     /* Swaps the buffers so the printing will be visible. */
     glutSwapBuffers(); 
@@ -210,69 +181,4 @@ Display::setTitle(const char * _title)
     return this->title != NULL;
 }
 
-/**
- * Adds a figure object to the list of objects to be printed.
- * @param Figure    *figure     The figure to be added to the list.
- */
-void
-Display::addFigure(Figure * figure)
-{
-    this->figures.push_back(figure);
-}
-
-/**
- * Removes the figure from the list of figures to print.
- * @param Figure    *figure     The figure to be removed.
- */
-void
-Display::removeFigure(Figure *figure)
-{
-    this->figures.remove(figure);
-}
-
-/**
- * Retrives the last item of the figure list and removes it.
- * @return The requested item.
- */
-Figure *
-Display::popFigure()
-{
-    Figure * item = this->figures.back();
-    this->figures.pop_back();
-
-    return item;
-}
-
-/**
- * Retrieves the first element of the list and removes it.
- * @return The requested element.
- */
-Figure *
-Display::shiftFigure()
-{
-    Figure * item = this->figures.front();
-    this->figures.pop_front();
-
-    return item;
-}
-
-/**
- * Retrieves the first item of the list and returns it.
- * @return The item requested.
- */
-Figure *
-Display::firstFigure()
-{
-    return this->figures.front();
-}
-
-/**
- * Retrieves the last item of the list and returns it.
- * @return The item requested.
- */
-Figure *
-Display::lastFigure()
-{
-    return this->figures.back();
-}
 

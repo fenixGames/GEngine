@@ -12,6 +12,7 @@
 #include <GL/gl.h>
 
 #define Point2DList std::list<D2D::Point *>
+#define Point3DList std::list<D3D::Point *>
 
 /* The following declarations are needed for the Figure part. */
 namespace D2D {
@@ -39,14 +40,18 @@ class D2D::Figure {
     protected:
         bool solid; /* Indicates if the figure has solid color. */
 		GLfloat rotAngle; /* The angle used to rotate the Figure. */
+        bool closed;    /* Indicated if this figure must be looped back to the beginning. */
     public:
         Figure();
 
         /* Virtual function needed to be overriden. */
-        virtual void print() = 0; 
+        virtual Point2DList * print() = 0; 
 
         /* By default, all the figures are wired figures, with this, they will be solid. */
         void setSolid();
+
+        /* Rotates the figure the angle declared in degrees. (It is easier to match). */
+        void rotate(GLfloat angle);
 };
 
 /**
@@ -67,7 +72,7 @@ class D2D::Point : public D2D::Figure {
         static float distance(D2D::Point p1, D2D::Point p2);
 
         /* Prints the figure. */
-        virtual void print();
+        virtual Point2DList * print();
 };
 
 /**
@@ -80,7 +85,7 @@ class D3D::Point : public D2D::Point {
         Point(GLint xx, GLint yy, GLint zz);
 
         /* TODO Prints the 3D object. */
-        void print();
+        Point2DList * print();
 };
 
 /**
@@ -99,7 +104,7 @@ class D2D::Arc : public D2D::Figure {
         D2D::Point * getEnd();
 
         /* Prints the arc. */
-        virtual void print();
+        virtual Point2DList * print();
 };
 
 /**
@@ -110,7 +115,7 @@ class D2D::Sector : public D2D::Arc {
         Sector(D2D::Point c, D2D::Point s, GLfloat a = 360.0f);
 
         /* Prints the sector. */
-        void print();
+        Point2DList * print();
 };
 
 /**
@@ -132,7 +137,7 @@ class D2D::Segment : public D2D::Figure {
         Segment(D2D::Point sp, D2D::Point ep);
 
         /* Prints the segment on the screen. */
-        void print();
+        Point2DList * print();
 };
 
 /**
@@ -147,7 +152,7 @@ class D2D::Polygon : public D2D::Figure {
         Polygon(const D2D::Point ** list = NULL, int number = 0);
 
         /* Prints the polygon on the screen. */
-        virtual void print();
+        virtual Point2DList * print();
 };
 
 /**
@@ -168,7 +173,7 @@ class D2D::EllArc : public D2D::Figure {
         EllArc(D2D::Point center, D2D::Point start, GLfloat a, GLfloat b, GLfloat angle = 360.0f);
 
         /* Prints the ellipsoidal arc on the screen. */
-        void print();
+        Point2DList * print();
 
 		/* Gets the ending point of the ellipsoidal arc. */
 		D2D::Point * getEnd();
