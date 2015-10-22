@@ -4,6 +4,8 @@
 
 #define POINT_PREC  180.0f
 #define PI  M_PI
+
+using namespace D2D;
 /**
  * Static function to make the transformation between the points and the screen.
  *
@@ -42,7 +44,7 @@ canvas(GLint xin, GLint yin, GLint zin, GLfloat *xout = NULL, GLfloat *yout = NU
 /**
  * The constructor of Figure initializes the solid variable to false.
  */
-Figure::Figure()
+Figure::Figure() 
 {
     this->solid = false;
 }
@@ -62,7 +64,7 @@ Figure::setSolid()
  * @param   GLint   xx  The horizontal component of the point.
  * @param   GLint   yy  The vertical component of the point.
  */
-Point2D::Point2D(GLint xx, GLint yy)
+Point::Point(GLint xx, GLint yy)
 {
     this->x = xx;
     this->y = yy;
@@ -72,7 +74,7 @@ Point2D::Point2D(GLint xx, GLint yy)
  * Prints a 2D point on the screen.
  */
 void
-Point2D::print()
+Point::print()
 {
     GLfloat vpx, vpy;
 
@@ -88,8 +90,8 @@ Point2D::print()
  * @param   Point2D point   The point to be copied.
  * @return The new point created.
  */
-Point2D
-Point2D::operator = (Point2D point)
+Point
+Point::operator = (Point point)
 {
     this->x = point.x;
     this->y = point.y;
@@ -104,7 +106,7 @@ Point2D::operator = (Point2D point)
  * @return The distance between the two points.
  */
 float
-Point2D::distance(Point2D p1, Point2D p2)
+Point::distance(Point p1, Point p2)
 {
     float xcomp, ycomp;
 
@@ -118,28 +120,12 @@ Point2D::distance(Point2D p1, Point2D p2)
 }
 
 /**
- * Constructor of the 3D point class.
- * @param   GLint   xx  The horizontal component of the point.
- * @param   GLint   yy  The vertical component of the point.
- * @param   GLint   zz  The depth component of the point.
- */
-Point3D::Point3D(GLint xx, GLint yy, GLint zz) : Point2D(xx, yy)
-{
-    this->z = zz;
-}
-
-/* TODO 3D print. */
-void
-Point3D::print()
-{}
-
-/**
  * Contructor of the arc class.
  * @param   Point2D     c   The center of the circunference associated to the arc.
  * @param   Point2D     s   The start point of the arc.
  * @param   GLfloat     a   The angle of the arc.
  */
-Arc2D::Arc2D(Point2D c, Point2D s, GLfloat a)
+Arc::Arc(Point c, Point s, GLfloat a)
 {
     this->center = c;
     this->start = s;
@@ -157,9 +143,9 @@ Arc2D::Arc2D(Point2D c, Point2D s, GLfloat a)
  * Prints the arc on the screen, after converting each point, of course.
  */
 void
-Arc2D::print() {
+Arc::print() {
     GLfloat ang_step = PI / POINT_PREC, ang;
-    GLfloat rad = Point2D::distance(this->start, this->center);
+    GLfloat rad = Point::distance(this->start, this->center);
     GLfloat vpx, vpy;
 
     /* Calculating the initial angle. */
@@ -193,16 +179,16 @@ Arc2D::print() {
  *
  * @return The ending point of the arc.
  */
-Point2D *
-Arc2D::getEnd()
+Point *
+Arc::getEnd()
 {
     GLfloat radius, /* The radius of the circunference of the Arc. */
             sangle; /* The starting angle of the arc. */
-    Point2D * end;
+    Point * end;
     GLint   x, y;
 
     /* Getting the radius of the arc. */
-    radius = Point2D::distance(this->start, this->center);
+    radius = Point::distance(this->start, this->center);
 
     /* Getting the initial angle. */
     if (this->start.x != 0)
@@ -216,7 +202,7 @@ Arc2D::getEnd()
     x = this->center.x + radius * cos(sangle + (this->angle * PI / 180.0f));
     y = this->center.y + radius * sin(sangle + (this->angle * PI / 180.0f));
 
-    end = new Point2D(x, y);
+    end = new Point(x, y);
 
     return end;
 }
@@ -224,7 +210,7 @@ Arc2D::getEnd()
 /** 
  * Constructor of the sector, which is an extension of an arc.
  */
-Sector2D::Sector2D(Point2D c, Point2D s, GLfloat a) : Arc2D(c, s, a)
+Sector::Sector(Point c, Point s, GLfloat a) : Arc(c, s, a)
 {
 }
 
@@ -232,16 +218,16 @@ Sector2D::Sector2D(Point2D c, Point2D s, GLfloat a) : Arc2D(c, s, a)
  * Prints the sector on the screen.
  */
 void
-Sector2D::print()
+Sector::print()
 {
     /* Making the arc for the sector. */
-    Arc2D   arc(this->center, this-> start, this->angle);
+    Arc   arc(this->center, this-> start, this->angle);
 
     /* Getting the end point of the sector. */
-    Point2D * endp = arc.getEnd();
+    Point * endp = arc.getEnd();
 
     /* Making the two segments. */
-    Segment2D s1(this->start, this->center),    /* Start point of the arc -> center of the circunference. */
+    Segment   s1(this->start, this->center),    /* Start point of the arc -> center of the circunference. */
               s2(this->center, *endp);          /* Center of the circunference -> end point of the arc. */
 
     /* Print the arc and the two segments. */
@@ -255,17 +241,17 @@ Sector2D::print()
 /**
  * Constructor of the circuference, which is an extension of an arc.
  */
-Circunference2D::Circunference2D(Point2D c, GLint radius) : Arc2D(c, Point2D(c.x + radius, c.y), 360.0f)
+Circle::Circle(Point c, GLint radius) : Arc(c, Point(c.x + radius, c.y), 360.0f)
 {
 }
 
 /**
  * Creates a segment which it is a line between two 2D points.
  *
- * @param   Point2D sp  The starting point.
- * @param   Point2D ep  The ending point.
+ * @param   Point sp  The starting point.
+ * @param   Point ep  The ending point.
  */
-Segment2D::Segment2D(Point2D sp, Point2D ep)
+Segment::Segment(Point sp, Point ep)
 {
     this->start = sp;
     this->end = ep;
@@ -275,7 +261,7 @@ Segment2D::Segment2D(Point2D sp, Point2D ep)
  * Prints the segment on the screen.
  */
 void
-Segment2D::print()
+Segment::print()
 {
     GLfloat vpx, vpy;
 
@@ -295,7 +281,7 @@ Segment2D::print()
  *
  * @param   Point2DList list    The list of 2D points that makes the polygon.
  */
-Polygon2D::Polygon2D(Point2DList list)
+Polygon::Polygon(Point2DList list)
 {
     Point2DList::iterator   iter;
 
@@ -309,23 +295,23 @@ Polygon2D::Polygon2D(Point2DList list)
  * @param   Point2D *   list    The array of 2D points that makes the polygon.
  * @param   int         number  The length of the array.
  */
-Polygon2D::Polygon2D(const Point2D ** list, int number)
+Polygon::Polygon(const Point ** list, int number)
 {
     int idx;
 
     for (idx = 0; idx < number; idx++)
-        this->pointList.push_back((Point2D *)list[idx]);
+        this->pointList.push_back((Point *)list[idx]);
 }
 
 /**
  * Prints the polygon on the screen.
  */
 void
-Polygon2D::print()
+Polygon::print()
 {
     GLfloat vpx, vpy;
     Point2DList::iterator   iter;
-    Point2D * point;
+    Point * point;
 
     if (! this->solid) {
         glBegin(GL_LINE_LOOP);
@@ -349,7 +335,7 @@ Polygon2D::print()
  * @param   GLfloat b       The modifier of the Y component.
  * @param   GLfloat ang     The angle of the arc.
  */
-EllArc2D::EllArc2D(Point2D cen, Point2D st, GLfloat a, GLfloat b, GLfloat ang)
+EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
 {
     this->center = cen;
     this->start = st;
@@ -368,7 +354,7 @@ EllArc2D::EllArc2D(Point2D cen, Point2D st, GLfloat a, GLfloat b, GLfloat ang)
  * Prints the ellipse on the screen.
  */
 void
-EllArc2D::print()
+EllArc::print()
 {
     GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
     GLfloat vpx, vpy;
@@ -403,8 +389,8 @@ EllArc2D::print()
  *
  * @return The requested point.
  */
-Point2D *
-EllArc2D::getEnd()
+Point *
+EllArc::getEnd()
 {
 	GLfloat sangle; /* The starting angle. */
 	GLfloat xcomp, ycomp;
@@ -421,25 +407,25 @@ EllArc2D::getEnd()
 	xcomp = this->xMod * cos( sangle + (this->angle * PI / 180.0f)) + this->center.x;
 	ycomp = this->yMod * sin( sangle + (this->angle * PI / 180.0f)) + this->center.y;
 
-	return new Point2D(xcomp, ycomp);
+	return new Point(xcomp, ycomp);
 }
 
 /**
  * Constructor of the ellipse. Dummy class. 
  */
-Ellipse2D::Ellipse2D(Point2D center, GLfloat a, GLfloat b) : 
-	EllArc2D(center, Point2D(center.x + a, center.y), a ,b, 360.0f)
+Ellipse::Ellipse(Point center, GLfloat a, GLfloat b) : 
+	EllArc(center, Point(center.x + a, center.y), a ,b, 360.0f)
 {
 }
 
 /**
  * Constructor of the regular polygon.
  *
- * @param Point2D 	center	The center of the circunscribed circunference.
+ * @param Point 	center	The center of the circunscribed circunference.
  * @param unsigned	sides	The number of sides of the polygon.
  * @param GLint		rad		The radius of the circunscribed circunference.
  */
-RegPol2D::RegPol2D(Point2D center, unsigned int sides, GLint rad)
+RegPol::RegPol(Point center, unsigned int sides, GLint rad)
 {
 	GLfloat ang_step;
 	unsigned int idx;
@@ -451,7 +437,7 @@ RegPol2D::RegPol2D(Point2D center, unsigned int sides, GLint rad)
 
 	for (idx = 0; idx < sides; idx++) {
 		this->pointList.push_back(
-				new Point2D(
+				new Point(
 					center.x + rad * cos(idx * ang_step * PI / 180.0f),
 				   	center.y + rad * sin(idx * ang_step * PI / 180.0f)
 					)
@@ -462,13 +448,13 @@ RegPol2D::RegPol2D(Point2D center, unsigned int sides, GLint rad)
 /**
  * Constructor of the rectangle.
  *
- * @param Point2D	p1	The first point of the rectangle.
- * @param Point2D 	p2	The second point of the rectangle.
+ * @param Point	p1	The first point of the rectangle.
+ * @param Point	p2	The second point of the rectangle.
  */
-Rectangle2D::Rectangle2D(Point2D p1, Point2D p2)
+Rectangle::Rectangle(Point p1, Point p2)
 {
-	this->pointList.push_back(new Point2D(p1.x, p1.y));
-	this->pointList.push_back(new Point2D(p1.x, p2.y));
-	this->pointList.push_back(new Point2D(p2.x, p2.y));
-	this->pointList.push_back(new Point2D(p2.x, p1.y));
+	this->pointList.push_back(new Point(p1.x, p1.y));
+	this->pointList.push_back(new Point(p1.x, p2.y));
+	this->pointList.push_back(new Point(p2.x, p2.y));
+	this->pointList.push_back(new Point(p2.x, p1.y));
 }

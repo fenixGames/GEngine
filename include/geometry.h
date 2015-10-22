@@ -11,12 +11,31 @@
 #include <list>
 #include <GL/gl.h>
 
-#define Point2DList std::list<Point2D *>
+#define Point2DList std::list<D2D::Point *>
+
+/* The following declarations are needed for the Figure part. */
+namespace D2D {
+    class Figure;
+    class Point;
+    class Arc;
+    class Sector;
+    class Circle;
+    class Segment;
+    class Polygon;
+    class EllArc;
+    class Ellipse;
+    class RegPol;
+    class Rectangle;
+};
+
+namespace D3D {
+    class Point;
+};
 
 /**
  * The abstract class for the printable objects.
  */
-class Figure {
+class D2D::Figure {
     protected:
         bool solid; /* Indicates if the figure has solid color. */
 		GLfloat rotAngle; /* The angle used to rotate the Figure. */
@@ -28,26 +47,24 @@ class Figure {
 
         /* By default, all the figures are wired figures, with this, they will be solid. */
         void setSolid();
-
-		/* TODO Rotation and translation. */
 };
 
 /**
  * The class used to print a 2D point.
  */
-class Point2D : public Figure {
+class D2D::Point : public D2D::Figure {
     public:
         /* These components are public in order to allow all the figures access them. */
         GLint   x, /* The horizontal component of the point. */
                 y; /* The vertical component of the point. */
 
-        Point2D(GLint xx = 0, GLint yy = 0);
+        Point(GLint xx = 0, GLint yy = 0);
 
         /* Setting the assignator between two points. */
-        Point2D operator = (Point2D);
+        D2D::Point operator = (D2D::Point);
 
         /* Calculates the distance between two points. */
-        static float distance(Point2D p1, Point2D p2);
+        static float distance(D2D::Point p1, D2D::Point p2);
 
         /* Prints the figure. */
         virtual void print();
@@ -56,11 +73,11 @@ class Point2D : public Figure {
 /**
  * The class used to print a 3D point.
  */
-class Point3D : public Point2D {
+class D3D::Point : public D2D::Point {
     protected:
         GLint z; /* The depth component of the point. */
     public:
-        Point3D(GLint xx, GLint yy, GLint zz);
+        Point(GLint xx, GLint yy, GLint zz);
 
         /* TODO Prints the 3D object. */
         void print();
@@ -69,17 +86,17 @@ class Point3D : public Point2D {
 /**
  * The class used to print an arc.
  */
-class Arc2D : public Figure {
+class D2D::Arc : public D2D::Figure {
     protected:
-        Point2D center; /* The point associated to the center of the arc. */
-        Point2D start;  /* The starting point of the arc. */
+        D2D::Point center; /* The point associated to the center of the arc. */
+        D2D::Point start;  /* The starting point of the arc. */
         GLfloat angle;  /* The angle associated to the arc. */
 
     public:
-        Arc2D(Point2D c, Point2D s, GLfloat a = 360.0f);
+        Arc(D2D::Point c, D2D::Point s, GLfloat a = 360.0f);
 
         /* Gets the ending point of the arc. */
-        Point2D * getEnd();
+        D2D::Point * getEnd();
 
         /* Prints the arc. */
         virtual void print();
@@ -88,9 +105,9 @@ class Arc2D : public Figure {
 /**
  * The class used to print a circular sector.
  */
-class Sector2D : public Arc2D {
+class D2D::Sector : public D2D::Arc {
     public:
-        Sector2D(Point2D c, Point2D s, GLfloat a = 360.0f);
+        Sector(D2D::Point c, D2D::Point s, GLfloat a = 360.0f);
 
         /* Prints the sector. */
         void print();
@@ -99,20 +116,20 @@ class Sector2D : public Arc2D {
 /**
  * The class to print a circunference.
  */
-class Circunference2D : public Arc2D {
+class D2D::Circle : public D2D::Arc {
     public:
-        Circunference2D(Point2D c, GLint radius);
+        Circle(D2D::Point c, GLint radius);
 };
 
 /**
  * The class used to print a segment.
  */
-class Segment2D : public Figure {
+class D2D::Segment : public D2D::Figure {
     protected:
-        Point2D start,  /* The starting point of the segment. */
+        D2D::Point start,  /* The starting point of the segment. */
                 end;    /* The ending point of the segment. */
     public:
-        Segment2D(Point2D sp, Point2D ep);
+        Segment(D2D::Point sp, D2D::Point ep);
 
         /* Prints the segment on the screen. */
         void print();
@@ -121,13 +138,13 @@ class Segment2D : public Figure {
 /**
  * The class to draw polygons.
  */
-class Polygon2D : public Figure {
+class D2D::Polygon : public D2D::Figure {
     protected:
         Point2DList pointList;  /* The list of points associated to the polygon. */
     public:
         /* There are two ways of create the Polygon, though a list of points or through an array. */
-        Polygon2D(Point2DList list);
-        Polygon2D(const Point2D ** list = NULL, int number = 0);
+        Polygon(Point2DList list);
+        Polygon(const D2D::Point ** list = NULL, int number = 0);
 
         /* Prints the polygon on the screen. */
         virtual void print();
@@ -140,37 +157,37 @@ class Polygon2D : public Figure {
  *  x = xMod * cos(ang);
  *  y = yMod * sin(ang);
  */
-class EllArc2D : public Figure {
+class D2D::EllArc : public D2D::Figure {
     protected:
-        Point2D center, /* The center of the associated ellipse. */
+        D2D::Point center, /* The center of the associated ellipse. */
                 start;  /* The starting point used to draw the ellipse. */
         GLfloat xMod,   /* The modifier of the X component of the ellipse. */
                 yMod;   /* The modifier of the Y component of the ellipse. */
         GLfloat angle;  /* The angle of the arc to be drawn. */
     public:
-        EllArc2D(Point2D center, Point2D start, GLfloat a, GLfloat b, GLfloat angle = 360.0f);
+        EllArc(D2D::Point center, D2D::Point start, GLfloat a, GLfloat b, GLfloat angle = 360.0f);
 
         /* Prints the ellipsoidal arc on the screen. */
         void print();
 
 		/* Gets the ending point of the ellipsoidal arc. */
-		Point2D * getEnd();
+		D2D::Point * getEnd();
 };
 
 /**
  * The class to expand the ellipsoidal arc to an ellipse.
  */
-class Ellipse2D : public EllArc2D {
+class D2D::Ellipse : public D2D::EllArc {
 	public:
-		Ellipse2D(Point2D center, GLfloat a, GLfloat b);
+		Ellipse(D2D::Point center, GLfloat a, GLfloat b);
 };
 
 /**
  * Creating the regular polygon class.
  */
-class RegPol2D : public Polygon2D {
+class D2D::RegPol : public D2D::Polygon {
 	public:
-		RegPol2D(Point2D center, unsigned int sides, GLint rad);
+		RegPol(D2D::Point center, unsigned int sides, GLint rad);
 };
 
 /**
@@ -182,9 +199,9 @@ class RegPol2D : public Polygon2D {
  * 	P3 = (P2.x, P2.y)
  * 	P4 = (P2.x, P1.y)
  */
-class Rectangle2D : public Polygon2D {
+class D2D::Rectangle : public D2D::Polygon {
 	public:
-		Rectangle2D(Point2D p1, Point2D p2);
+		Rectangle(D2D::Point p1, D2D::Point p2);
 };
 
 #endif
