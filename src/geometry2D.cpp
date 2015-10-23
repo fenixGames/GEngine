@@ -73,15 +73,14 @@ Point::Point(GLint xx, GLint yy)
 /**
  * Prints a 2D point on the screen.
  */
-void
+Point2DList *
 Point::print()
 {
-    GLfloat vpx, vpy;
+    Point2DList * list = new Point2DList();
 
-    canvas(this->x, this->y, 0, &vpx, &vpy);
-    glBegin(GL_POINTS);
-    glVertex2f(vpx, vpy);
-    glEnd();
+    list->push_back(new Point(this->x, this->y));
+
+    return list;
 }
 
 /**
@@ -142,11 +141,12 @@ Arc::Arc(Point c, Point s, GLfloat a)
 /**
  * Prints the arc on the screen, after converting each point, of course.
  */
-void
+Point2DList *
 Arc::print() {
     GLfloat ang_step = PI / POINT_PREC, ang;
     GLfloat rad = Point::distance(this->start, this->center);
     GLfloat vpx, vpy;
+    Point2DList * list;
 
     /* Calculating the initial angle. */
     if (this->start.x != 0)
@@ -157,21 +157,15 @@ Arc::print() {
         ang = 3 * PI / 2;
 
     /* Calculating and printing the required points. */
-	if (this->angle == 360.0f)
-		glBegin(GL_LINE_LOOP);
-	else
-	    glBegin(GL_LINE_STRIP);
-
     while (ang < this->angle * PI / 180.0f) {
         vpx = rad * cos(ang) + this->center.x;
         vpy = rad * sin(ang) + this->center.y;
 
-        canvas(vpx, vpy, 0, &vpx, &vpy);
-        glVertex2f(vpx, vpy);
+        list->push_back(new Point(vpx, vpy));
         
         ang += ang_step;
     }
-    glEnd();
+    return list;
 }
 
 /**
@@ -217,26 +211,20 @@ Sector::Sector(Point c, Point s, GLfloat a) : Arc(c, s, a)
 /**
  * Prints the sector on the screen.
  */
-void
+Point2DList *
 Sector::print()
 {
+    Point2DList * list;
+
     /* Making the arc for the sector. */
     Arc   arc(this->center, this-> start, this->angle);
 
-    /* Getting the end point of the sector. */
-    Point * endp = arc.getEnd();
+    list = arc.print();
+    list->push_front(new Point(this->center.x, this->center.y));
 
-    /* Making the two segments. */
-    Segment   s1(this->start, this->center),    /* Start point of the arc -> center of the circunference. */
-              s2(this->center, *endp);          /* Center of the circunference -> end point of the arc. */
-
-    /* Print the arc and the two segments. */
-    if (!this->solid) {
-        arc.print();
-        s1.print();
-        s2.print();
-    } /* TODO Solid color */
+    return list;
 }
+
 
 /**
  * Constructor of the circuference, which is an extension of an arc.
@@ -260,20 +248,15 @@ Segment::Segment(Point sp, Point ep)
 /**
  * Prints the segment on the screen.
  */
-void
+Point2DList *
 Segment::print()
 {
-    GLfloat vpx, vpy;
+    Point2DList * list = new Point2DList();
 
-    glBegin(GL_LINES);
-    /* Getting the normalized coordinates of the starting point and printing it. */
-    canvas(this->start.x, this->start.y, 0, &vpx, &vpy);
-    glVertex2f(vpx, vpy);
+    list->push_back(new Point(this->start.x, this->start.y));
+    list->push_back(new Point(this->end.x, this->end.y));
 
-    /* Getting the normalized coordinates of the ending point and drawing it. */
-    canvas(this->end.x, this->end.y, 0, &vpx, &vpy);
-    glVertex2f(vpx, vpy);
-    glEnd();
+    return list;
 }
 
 /**
@@ -306,24 +289,21 @@ Polygon::Polygon(const Point ** list, int number)
 /**
  * Prints the polygon on the screen.
  */
-void
+Point2DList *
 Polygon::print()
 {
-    GLfloat vpx, vpy;
     Point2DList::iterator   iter;
+    Point2DList * list = new Point2DList();
     Point * point;
 
-    if (! this->solid) {
-        glBegin(GL_LINE_LOOP);
+    /* Calculating the normalized points of the polygon in order to print it. */
+    for (iter = this->pointList.begin(); iter != this->pointList.end(); iter++) {
+        point = *iter;
 
-        /* Calculating the normalized points of the polygon in order to print it. */
-        for (iter = this->pointList.begin(); iter != this->pointList.end(); iter++) {
-            point = *iter;
-            canvas(point->x, point->y, 0, &vpx, &vpy);
-            glVertex2f(vpx,vpy);
-        }
-        glEnd();
+        list->push_back(new Point(point->x, point->y));
     }
+
+    return list;
 }
 
 /**
@@ -353,11 +333,12 @@ EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
 /**
  * Prints the ellipse on the screen.
  */
-void
+Point2DList *
 EllArc::print()
 {
     GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
     GLfloat vpx, vpy;
+    Point2DList *list = new Point2DList();
 
     /* Calculating the initial angle. */
     if (this->start.x != 0)
@@ -368,20 +349,16 @@ EllArc::print()
         ang = 1.5f * PI;
 	end_ang = this->angle * PI / 180.0f;
 
-	if (this->angle == 360.0f)
-		glBegin(GL_LINE_LOOP);
-	else
-	    glBegin(GL_LINE_STRIP);
     /* Calculating the points and printing them. */
     while (ang < end_ang) {
         vpx = this->xMod * cos(ang) + this->center.x;
         vpy = this->yMod * sin(ang) + this->center.y;
 
-        canvas(vpx, vpy, 0, &vpx, &vpy);
-        glVertex2f(vpx, vpy);
+        list->push_back(new Point(vpx, vpy));
         ang += ang_step;
     }
-    glEnd();
+
+    return list;
 }
 
 /**
