@@ -6,40 +6,6 @@
 #define PI  M_PI
 
 using namespace D2D;
-/**
- * Static function to make the transformation between the points and the screen.
- *
- * @param[in]   GLint   xin     The x component of the input point.
- * @param[in]   GLint   yin     The y component of the input point.
- * @param[in]   GLint   zin     The z component of the input point.
- * @param[out]  GLfloat *xout   The x component of the output point.
- * @param[out]  GLfloat *yout   The y component of the output point.
- * @param[out]  GLfloat *zout   The z component of the output point.
- */
-static void
-canvas(GLint xin, GLint yin, GLint zin, GLfloat *xout = NULL, GLfloat *yout = NULL, GLfloat *zout = NULL)
-{
-    GLint wwidth, wheight;
-    GLfloat alpha, beta, gamma, delta;
-
-    /* Getting the size of the window to make the transformation. */
-    wwidth = glutGet(GLUT_WINDOW_WIDTH);
-    wheight = glutGet(GLUT_WINDOW_HEIGHT);
-
-    /* Calculating the modifiers. */
-    alpha   = (2.0f / wwidth);
-    beta    = -1.0f;
-    gamma   = (GLfloat)(2.0f / wheight);
-    delta   = -1.0f;
-
-    /* Calculating the new components. */
-    if (xout != NULL)
-        *xout = alpha * xin + beta;
-    if (yout != NULL)
-        *yout = gamma * yin + delta;
-
-    /* TODO: Depth component. */
-}
 
 /**
  * The constructor of Figure initializes the solid variable to false.
@@ -47,6 +13,7 @@ canvas(GLint xin, GLint yin, GLint zin, GLfloat *xout = NULL, GLfloat *yout = NU
 Figure::Figure() 
 {
     this->solid = false;
+	this->mode = GL_LINES;
 }
 
 /**
@@ -59,6 +26,17 @@ Figure::setSolid()
 }
 
 /**
+ * Gets the mode to use to print the figure.
+ *
+ * @return The mode to use.
+ */
+GLenum
+Figure::getMode()
+{
+	return mode;
+}
+
+/**
  * Constructor of the 2D Point class.
  *
  * @param   GLint   xx  The horizontal component of the point.
@@ -68,6 +46,7 @@ Point::Point(GLint xx, GLint yy)
 {
     this->x = xx;
     this->y = yy;
+	this->mode = GL_POINTS;
 }
 
 /**
@@ -136,6 +115,9 @@ Arc::Arc(Point c, Point s, GLfloat a)
 
     while (this->angle < 0)
         this->angle += 360.0f;
+
+	if (this->angle == 360.0f)
+		this->mode = GL_LINE_LOOP;
 }
 
 /**
@@ -146,7 +128,7 @@ Arc::print() {
     GLfloat ang_step = PI / POINT_PREC, ang;
     GLfloat rad = Point::distance(this->start, this->center);
     GLfloat vpx, vpy;
-    Point2DList * list;
+    Point2DList * list = new Point2DList();
 
     /* Calculating the initial angle. */
     if (this->start.x != 0)
@@ -206,6 +188,7 @@ Arc::getEnd()
  */
 Sector::Sector(Point c, Point s, GLfloat a) : Arc(c, s, a)
 {
+	this->mode = GL_LINE_LOOP;
 }
 
 /**
@@ -270,6 +253,7 @@ Polygon::Polygon(Point2DList list)
 
     for (iter = list.begin(); iter != list.end(); iter++)
         this->pointList.push_back(*iter);
+	this->mode = GL_LINE_LOOP;
 }
 
 /**
@@ -284,6 +268,7 @@ Polygon::Polygon(const Point ** list, int number)
 
     for (idx = 0; idx < number; idx++)
         this->pointList.push_back((Point *)list[idx]);
+	this->mode = GL_LINE_LOOP;
 }
 
 /**
@@ -328,6 +313,9 @@ EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
         this->angle -= 360.0f;
     while (this->angle < 0)
         this->angle += 360.0f;
+
+	if (this->angle == 360.0f)
+		this->mode = GL_LINE_LOOP;
 }
 
 /**
@@ -420,6 +408,7 @@ RegPol::RegPol(Point center, unsigned int sides, GLint rad)
 					)
 				);
 	}
+	this->mode = GL_LINE_LOOP;
 }
 
 /**
@@ -434,4 +423,5 @@ Rectangle::Rectangle(Point p1, Point p2)
 	this->pointList.push_back(new Point(p1.x, p2.y));
 	this->pointList.push_back(new Point(p2.x, p2.y));
 	this->pointList.push_back(new Point(p2.x, p1.y));
+	this->mode = GL_LINE_LOOP;
 }

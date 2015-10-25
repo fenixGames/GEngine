@@ -11,6 +11,7 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 #include "geometry.h"
+#include "matrix.h"
 
 #ifndef _GENGINE_H
 namespace GEngine {
@@ -25,6 +26,7 @@ namespace GEngine {
  * The class associated to the display engine whose in charge of printing everything on the screen.
  */
 class GEngine::Display {
+	private:
     protected:
         GLuint screen[2];   /* Dimensions of the main window. */
         GLuint position[2]; /* Position of the main window. */
@@ -37,6 +39,10 @@ class GEngine::Display {
 
         Figure2DList    * figures2D;
 //        Figure3DList    * figures3D; TODO
+//
+        /* Transformation matrix. */
+		Matrix	* trans;
+
         /* The function to draw the screen. */
         static void displayFunc();
     public:
@@ -53,6 +59,12 @@ class GEngine::Display {
 
         /* Sets the title of the actual window. */
         bool setTitle(const char * title);
+
+		/* Rotates the whole display. */
+		void rotate(GLfloat angle);
+
+		/* Bends the display. TODO 3D */
+		/*void bend(GLfloat angle);*/
 
         /* Adds a figure to be drawn to the list of objects to draw. */
         void add2DFigure(D2D::Figure * figure);

@@ -1,12 +1,13 @@
 #include "display.h"
 #include <string.h>
+#include <math.h>
 
 using namespace GEngine;
 
 Display *Display::theDisplay = NULL;
 
 /* Declaring the external static funstions to draw the 2D and 3D figures. */
-extern int print2D(Figure2DList * list, int winId);
+extern int print2D(Figure2DList * list, int winId, Matrix * trans);
 
 /**
  * Inititializes the display class and the main window's size and position.
@@ -21,6 +22,7 @@ Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
 	char *argv[1];
 	char dummyString[8];
 	int argc = 1;
+	double ax, ay;
 
     /* Setting the components of this class. */
     this->screen[0] = width;
@@ -43,6 +45,11 @@ Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
     /* Initializing the lists of figures to NULL. */
     this->figures2D = NULL;
     //this->figures3D = NULL; TODO
+
+	/* Settign the transformation matrix to the default values. */
+	ax = 2.0 / (this->screen[0] - 1.0); /* Setting the X modifier. */
+	ay = 2.0 / (this->screen[1] - 1.0); /* Setting the Y modifier. */
+	this->trans = new Matrix(3, 3, ax, 0.0, -1.0, 0.0, ay, -1.0, 0.0, 0.0, 0.0);
 
 	if (this->theDisplay == NULL) {
 		/* GLUT initialization. */
@@ -93,7 +100,7 @@ Display::displayFunc()
     /* If the two list are set, print the 3D first, and then the 2D. */
     /* TODO 3D printing. */
     /* Prints the 2D figures of the list. */
-    print2D(list2D, Display::theDisplay->mainWin);
+    print2D(list2D, Display::theDisplay->mainWin, Display::theDisplay->trans);
 
     /* Swaps the buffers so the printing will be visible. */
     glutSwapBuffers(); 
@@ -137,7 +144,7 @@ Display::frgColor(unsigned char r, unsigned char g, unsigned char b)
 int
 Display::print()
 {
-    /* Setting the position and the size of the window. */
+	/* Setting the position and the size of the window. */
     glutInitWindowPosition(this->position[0], this->position[1]);
     glutInitWindowSize(this->screen[0], this->screen[1]);
  
@@ -153,7 +160,7 @@ Display::print()
     /* Setting the function to redraw everything. */
     glutDisplayFunc(&Display::displayFunc);
 
-    glutMainLoop();
+	glutMainLoop();
     return 0;
 }
 
@@ -181,4 +188,30 @@ Display::setTitle(const char * _title)
     return this->title != NULL;
 }
 
+/**
+ * Rotate the whole display the angle indicated in the argument.
+ *
+ * @param	GLfloat	angle	The angle to rotate the display.
+ */
+void
+Display::rotate(GLfloat angle) {
+	/* Normalizing the angle (0 <= angle <= 360). */
+	while (angle > 360.0f)
+		angle -= 360.0f;
+
+	while (angle < 0.0f)
+		angle += 360.0f;
+
+	angle *= M_PI / 180.0f;
+
+	/* Declaring the rotational matrix. */
+	Matrix rot(3, 3, cos(angle), -sin(angle), 0.0, sin(angle), cos(angle), 0.0, 0.0, 0.0, 1.0), * old;
+
+	if (this->trans != NULL) {
+		old = this->trans;
+		/* Transforming the existent matrix. */
+		(* this->trans) = (* old) * rot;
+//		delete(old);
+	}
+}
 

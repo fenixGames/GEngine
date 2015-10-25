@@ -1,4 +1,5 @@
 #include_directories("../include")
 add_definitions(-fPIC -Wall -Werror -g -DDEBUG)
 add_library(display OBJECT display.cpp display2D.cpp)
+add_library(matrix	OBJECT matrix.cpp)
 add_library(geometry OBJECT geometry2D.cpp geometry3D.cpp)

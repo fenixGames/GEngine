@@ -195,6 +195,42 @@ Matrix::operator * (double value)
 }
 
 /**
+ * Multiplies a matrix to a vector getting another vector. The size of the vector must be the
+ * same as the number of columns in the matrix, resulting a new vector with a size equal to
+ * the number of rows of the matrix.
+ *
+ * @param Vector	vect	The vector to be multiplied to the matrix.
+ *
+ * @return	The new vector.
+ */
+Vector
+Matrix::operator * (const Vector vect)
+{
+	Vector	result;
+	unsigned int idx, idy;
+
+	/* Checking the sizes. */
+	if (this->ncolumns != vect.nelem)
+		return result;
+
+	/* Allocating the memory for the vector. */
+	result.elements = (double *) malloc(this->nrows * sizeof(double));
+	if (result.elements == NULL)
+		return result;
+
+	result.nelem = this->nrows;
+	/* Multipling ... */
+	for (idx = 0; idx < this->nrows; idx++) {
+		result.elements[idx] = 0;
+		for (idy = 0; idy < this->ncolumns; idy++) {
+			result.elements[idx] += this->getElement(idx, idy) * vect.elements[idy];
+		}
+	}
+
+	return result;
+}
+
+/**
  * Calculates the transponse of a Matrix. That would be to switch rows and columns.
  *
  * @return  The transponse of the matrix.
@@ -339,7 +375,7 @@ Matrix::setElement(unsigned int row, unsigned int col, double value)
     if (row >= this->nrows || col >= this->ncolumns)
         return;
 
-    *(this->matrix + (row * this->ncolumns) + col) = value;
+    this->matrix[(row * this->ncolumns) + col] = value;
 }
 
 /**
@@ -468,6 +504,22 @@ Vector::operator * (double value)
     }
 
     return v1;
+}
+
+/**
+ * Gets the element at the position indicated by the index.
+ *
+ * @param	unsigned	index	The index of the element to be retrieved.
+ *
+ * @return	The required element.
+ */
+double
+Vector::getElement(unsigned int index)
+{
+	if (index < this->nelem)
+		return this->elements[index];
+	else
+		return 0.0;
 }
 
 #ifdef DEBUG

@@ -19,8 +19,10 @@ Point::Point(GLint xx, GLint yy, GLint zz) : D2D::Point(xx, yy)
 }
 
 /* TODO 3D print. */
-void
+Point2DList * 
 Point::print()
-{}
+{
+	return NULL;
+}
 
 

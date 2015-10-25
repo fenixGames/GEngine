@@ -40,7 +40,7 @@ class D2D::Figure {
     protected:
         bool solid; /* Indicates if the figure has solid color. */
 		GLfloat rotAngle; /* The angle used to rotate the Figure. */
-        bool closed;    /* Indicated if this figure must be looped back to the beginning. */
+		GLenum	mode;	/* Indicates the mode to use to print. */
     public:
         Figure();
 
@@ -52,6 +52,9 @@ class D2D::Figure {
 
         /* Rotates the figure the angle declared in degrees. (It is easier to match). */
         void rotate(GLfloat angle);
+
+		/* Returns the mode to be used to print the figure. */
+		GLenum getMode();
 };
 
 /**

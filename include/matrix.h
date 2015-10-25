@@ -8,6 +8,33 @@
 #ifndef _MATRIX_H
 #include <stdarg.h>
 
+class Matrix;
+
+/**
+ * A class to define a vector.
+ */
+class Vector {
+		friend Matrix;
+    protected:
+        unsigned int nelem;
+        double  *elements;
+    public:
+        Vector(unsigned int nitems = 0, ...);
+
+        /* The scalar product of the vector. */
+        double operator * (const Vector v1);
+
+        /* The addition and substraction of two vectors. */
+        Vector operator + (const Vector v1);
+        Vector operator - (const Vector v1);
+
+        /* Multiplying a constant to a Vector. */
+        Vector operator * (double value);
+
+		/* Getting the element at position i. */
+		double getElement(unsigned int i);
+};
+
 /**
  * A class to define a matrix.
  */
@@ -16,7 +43,6 @@ class Matrix {
         unsigned int nrows, ncolumns;
         double * matrix;
 
-        void setElement(unsigned int row, unsigned int col, double value);
         Matrix getAdjoint(unsigned int row, unsigned int col) const;
     public:
         Matrix(unsigned int rows = 0, unsigned int cols = 0, ...);
@@ -34,6 +60,9 @@ class Matrix {
         /* Escalates a matrix. */
         Matrix  operator * (const double value);
 
+		/* Multiplies a matrix to a vector. */
+		Vector operator * (const Vector vect);
+
         /* Makes the transponse of the matrix. */
         Matrix transponse();
 
@@ -42,30 +71,13 @@ class Matrix {
 
         /* Calculates the determinant of the matrix. */
         double determinant() const;
+        
+		/* Sets an element of the matrix. */
+		void setElement(unsigned int row, unsigned int col, double value);
 #ifdef DEBUG
         /* Printing a matrix only makes sense on debug. */
         virtual void print();
 #endif
 };
 
-/**
- * A class to define a vector.
- */
-class Vector {
-    protected:
-        unsigned int nelem;
-        double  *elements;
-    public:
-        Vector(unsigned int nitems = 0, ...);
-
-        /* The scalar product of the vector. */
-        double operator * (const Vector v1);
-
-        /* The addition and substraction of two vectors. */
-        Vector operator + (const Vector v1);
-        Vector operator - (const Vector v1);
-
-        /* Multiplying a constant to a Vector. */
-        Vector operator * (double value);
-};
 #endif
