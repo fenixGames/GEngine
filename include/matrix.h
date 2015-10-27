@@ -14,7 +14,7 @@ class Matrix;
  * A class to define a vector.
  */
 class Vector {
-		friend Matrix;
+		friend class Matrix;
     protected:
         unsigned int nelem;
         double  *elements;

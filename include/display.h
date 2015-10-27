@@ -63,6 +63,10 @@ class GEngine::Display {
 		/* Rotates the whole display. */
 		void rotate(GLfloat angle);
 
+        /* Translates the whole display in a 2D or 3D environment. */
+        void translate2D(D2D::Point  * point);
+//        void translate3D(D3D::Point * point); TODO
+
 		/* Bends the display. TODO 3D */
 		/*void bend(GLfloat angle);*/
 

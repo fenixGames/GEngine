@@ -45,6 +45,19 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
 }
 
 /**
+ * Translates all the displayable figures to the given point. Usefull to have a different origin of coordinates.
+ *
+ * @param   Point   point   The new origin of coordinates.
+ */
+void
+Display::translate2D(Point  *point)
+{
+    Matrix  translate(3, 3, 1.0, 0.0, point->x, 0.0, 1.0, point->y, 0.0, 0.0, 1.0);
+
+    * this->trans = (*this->trans) * translate;
+}
+
+/**
  * Adds a figure object to the list of objects to be printed.
  * @param Figure    *figure     The figure to be added to the list.
  */
