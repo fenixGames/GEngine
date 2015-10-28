@@ -1,5 +1,13 @@
+/**
+ * This file contains all the functions used by the display related to the 2D figures
+ * and related to the 2D axis, such as rotation and translation.
+ *
+ * @author  Roberto Fernandez Cueto
+ * @date    28.10.2015
+ */
 #include "display.h"
 #include "geometry.h"
+
 
 using namespace GEngine;
 using namespace D2D;
@@ -52,7 +60,12 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
 void
 Display::translate2D(Point  *point)
 {
-    Matrix  translate(3, 3, 1.0, 0.0, point->x, 0.0, 1.0, point->y, 0.0, 0.0, 1.0);
+    double  x11, x12, y11, y12;
+    x11 = (2.0 * point->x) / (this->screen[0] - 1.0);
+    x12 = point->x;
+    y11 = (2.0 * point->y) / (this->screen[1] - 1.0);
+    y12 = point->y;
+    Matrix  translate(3, 3, x11, 0.0, x12, 0.0, y11, y12, 0.0, 0.0, 1.0);
 
     * this->trans = (*this->trans) * translate;
 }

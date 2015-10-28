@@ -160,6 +160,9 @@ Display::print()
     /* Setting the function to redraw everything. */
     glutDisplayFunc(&Display::displayFunc);
 
+#ifdef DEBUG
+    this->trans->print();
+#endif
 	glutMainLoop();
     return 0;
 }
