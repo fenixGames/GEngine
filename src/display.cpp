@@ -147,6 +147,7 @@ Display::print()
 	/* Setting the position and the size of the window. */
     glutInitWindowPosition(this->position[0], this->position[1]);
     glutInitWindowSize(this->screen[0], this->screen[1]);
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
  
     /* Setting the title of the window. */
     if (this->title == NULL)   
