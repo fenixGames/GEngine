@@ -10,6 +10,7 @@
 
 #include <list>
 #include <GL/gl.h>
+#include "matrix.h"
 
 #define Point2DList std::list<D2D::Point *>
 #define Point3DList std::list<D3D::Point *>
@@ -39,9 +40,11 @@ namespace D3D {
 class D2D::Figure {
     protected:
         bool solid; /* Indicates if the figure has solid color. */
-		GLfloat rotAngle; /* The angle used to rotate the Figure. */
 		GLenum	mode;	/* Indicates the mode to use to print. */
     public:
+		Matrix	*transf;	/* The transformation matrix. */
+		int		org[2];		/* The local origin of coordinates for the figure. */
+	
         Figure();
 
         /* Virtual function needed to be overriden. */
@@ -74,8 +77,14 @@ class D2D::Point : public D2D::Figure {
         /* Calculates the distance between two points. */
         static float distance(D2D::Point p1, D2D::Point p2);
 
+		/* Transforms the point locally. */
+		Point * transform(Figure * ptr);
+
         /* Prints the figure. */
         virtual Point2DList * print();
+
+		/* Set the transformation operation for the points. */
+		D2D::Point * operator * (Matrix * transf);
 };
 
 /**

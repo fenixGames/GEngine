@@ -25,38 +25,38 @@ Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
 	double ax, ay;
 
     /* Setting the components of this class. */
-    this->screen[0] = width;
-    this->screen[1] = height;
+    screen[0] = width;
+    screen[1] = height;
 
-    this->position[0] = x;
-    this->position[1] = y;
+    position[0] = x;
+    position[1] = y;
 
-    this->bgcolor[0] = 1.0f;
-    this->bgcolor[1] = 1.0f;
-    this->bgcolor[2] = 1.0f;
+    bgcolor[0] = 1.0f;
+    bgcolor[1] = 1.0f;
+    bgcolor[2] = 1.0f;
 
-    this->fgcolor[0] = 0.0f;
-    this->fgcolor[1] = 0.0f;
-    this->fgcolor[2] = 0.0f;
+    fgcolor[0] = 0.0f;
+    fgcolor[1] = 0.0f;
+    fgcolor[2] = 0.0f;
 
     /* Initializing the title of the window to NULL. */
-    this->title = NULL;
+    title = NULL;
 
     /* Initializing the lists of figures to NULL. */
-    this->figures2D = NULL;
-    //this->figures3D = NULL; TODO
+    figures2D = NULL;
+    //figures3D = NULL; TODO
 
 	/* Settign the transformation matrix to the default values. */
-	ax = 2.0 / (this->screen[0] - 1.0); /* Setting the X modifier. */
-	ay = 2.0 / (this->screen[1] - 1.0); /* Setting the Y modifier. */
-	this->trans = new Matrix(3, 3, ax, 0.0, -1.0, 0.0, ay, -1.0, 0.0, 0.0, 0.0);
+	ax = 2.0 / (screen[0] - 1.0); /* Setting the X modifier. */
+	ay = 2.0 / (screen[1] - 1.0); /* Setting the Y modifier. */
+	trans = new Matrix(3, 3, ax, 0.0, -1.0, 0.0, ay, -1.0, 0.0, 0.0, 0.0);
 
-	if (this->theDisplay == NULL) {
+	if (theDisplay == NULL) {
 		/* GLUT initialization. */
 		argv[0] = dummyString;
 		glutInit(&argc, argv);
 
-		this->theDisplay = this;
+		theDisplay = this;
 	}
 }
 
@@ -116,9 +116,9 @@ Display::displayFunc()
 void
 Display::bkgColor(unsigned char r, unsigned char g, unsigned char b)
 {
-    this->bgcolor[0] = (GLfloat)(r / 255);
-    this->bgcolor[1] = (GLfloat)(g / 255);
-    this->bgcolor[2] = (GLfloat)(b / 255);
+    bgcolor[0] = (GLfloat)(r / 255);
+    bgcolor[1] = (GLfloat)(g / 255);
+    bgcolor[2] = (GLfloat)(b / 255);
 }
 
 /**
@@ -131,9 +131,9 @@ Display::bkgColor(unsigned char r, unsigned char g, unsigned char b)
 void
 Display::frgColor(unsigned char r, unsigned char g, unsigned char b)
 {
-    this->fgcolor[0] = (GLfloat)(r / 255);
-    this->fgcolor[1] = (GLfloat)(g / 255);
-    this->fgcolor[2] = (GLfloat)(b / 255);
+    fgcolor[0] = (GLfloat)(r / 255);
+    fgcolor[1] = (GLfloat)(g / 255);
+    fgcolor[2] = (GLfloat)(b / 255);
 }
 
 /**
@@ -145,24 +145,24 @@ int
 Display::print()
 {
 	/* Setting the position and the size of the window. */
-    glutInitWindowPosition(this->position[0], this->position[1]);
-    glutInitWindowSize(this->screen[0], this->screen[1]);
+    glutInitWindowPosition(position[0], position[1]);
+    glutInitWindowSize(screen[0], screen[1]);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
  
     /* Setting the title of the window. */
-    if (this->title == NULL)   
-        this->mainWin = glutCreateWindow("");
+    if (title == NULL)   
+        mainWin = glutCreateWindow("");
     else
-        this->mainWin = glutCreateWindow(this->title);
+        mainWin = glutCreateWindow(title);
 
     /* Setting the background color. */
-    glClearColor(this->bgcolor[0], this->bgcolor[1], this->bgcolor[2], 0.0f);
+    glClearColor(bgcolor[0], bgcolor[1], bgcolor[2], 0.0f);
 
     /* Setting the function to redraw everything. */
     glutDisplayFunc(&Display::displayFunc);
 
 #ifdef DEBUG
-    this->trans->print();
+    trans->print();
 #endif
 	glutMainLoop();
     return 0;
@@ -182,14 +182,14 @@ Display::setTitle(const char * _title)
         return false;
 
     /* Allocating memory for the title. */
-    this->title = (char *) malloc((++length) * sizeof(char));
+    title = (char *) malloc((++length) * sizeof(char));
     
     /* Copying the title. */
-    if (this->title != NULL) {
-        strncpy(this->title, _title, length);
+    if (title != NULL) {
+        strncpy(title, _title, length);
     }
 
-    return this->title != NULL;
+    return title != NULL;
 }
 
 /**
@@ -211,10 +211,10 @@ Display::rotate(GLfloat angle) {
 	/* Declaring the rotational matrix. */
 	Matrix rot(3, 3, cos(angle), -sin(angle), 0.0, sin(angle), cos(angle), 0.0, 0.0, 0.0, 1.0), * old;
 
-	if (this->trans != NULL) {
-		old = this->trans;
+	if (trans != NULL) {
+		old = trans;
 		/* Transforming the existent matrix. */
-		(* this->trans) = (* old) * rot;
+		(* trans) = (* old) * rot;
 //		delete(old);
 	}
 }

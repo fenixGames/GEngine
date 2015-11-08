@@ -1,6 +1,7 @@
 #include "geometry.h"
 #include <math.h>
 #include <GL/glut.h>
+#include <stdio.h>
 
 #define POINT_PREC  180.0f
 #define PI  M_PI
@@ -12,8 +13,10 @@ using namespace D2D;
  */
 Figure::Figure() 
 {
-    this->solid = false;
-	this->mode = GL_LINES;
+    solid = false;
+	mode = GL_LINES;
+	transf = Matrix::identity(3);
+	org[0] = org[1] = 0;
 }
 
 /**
@@ -22,7 +25,7 @@ Figure::Figure()
 void
 Figure::setSolid()
 {
-    this->solid = true;
+    solid = true;
 }
 
 /**
@@ -37,6 +40,20 @@ Figure::getMode()
 }
 
 /**
+ * Rotates a figure so many angles as defined.
+ * @param	GLfloat	angle	The angle to rotate the figure.
+ */
+void
+Figure::rotate(GLfloat angle)
+{
+	angle *= M_PI / 180.0f;
+	Matrix rot(3, 3, cos(angle), -sin(angle), 0.0, sin(angle), cos(angle), 0.0, 0.0, 0.0, 1.0), tmp;
+	
+	tmp = * transf;
+	* transf = tmp *  rot;
+}
+
+/**
  * Constructor of the 2D Point class.
  *
  * @param   GLint   xx  The horizontal component of the point.
@@ -44,10 +61,31 @@ Figure::getMode()
  */
 Point::Point(GLint xx, GLint yy)
 {
-    this->x = xx;
-    this->y = yy;
-	this->mode = GL_POINTS;
+    x = org[0] = xx;
+    y = org[1] = yy;
+	mode = GL_POINTS;
 }
+
+/**
+ * Transforms the point locally and returns the result.
+ *
+ * @return	The transformed point.
+ */
+Point *
+Point::transform(Figure * ptr)
+{
+	Vector vect, out;
+
+	vect = Vector(3, (double)x - ptr->org[0], (double) y - ptr->org[1], 1.0);
+	out = (*ptr->transf) * vect;
+
+	ptr->transf->print();
+	printf("point (%d, %d) org (%d, %d)\n", x, y, ptr->org[0], ptr->org[1]);
+	printf("in = (%d, %d), out = (%f, %f)\n", x - ptr->org[0], y - ptr->org[1],
+				   	out.getElement(0), out.getElement(1));
+	return new Point(out.getElement(0) + ptr->org[0], out.getElement(1) + ptr->org[1]);
+}
+
 
 /**
  * Prints a 2D point on the screen.
@@ -57,7 +95,7 @@ Point::print()
 {
     Point2DList * list = new Point2DList();
 
-    list->push_back(new Point(this->x, this->y));
+    list->push_back(transform(this));
 
     return list;
 }
@@ -71,8 +109,8 @@ Point::print()
 Point
 Point::operator = (Point point)
 {
-    this->x = point.x;
-    this->y = point.y;
+    x = point.x;
+    y = point.y;
 
     return *this;
 }
@@ -98,6 +136,22 @@ Point::distance(Point p1, Point p2)
 }
 
 /**
+ * Transformates a point using the transformation matrix.
+ * @param	Matrix	transf	The transformation matrix.
+ * @return	The transformated point.
+ */
+Point *
+Point::operator * (Matrix * transf)
+{
+	Vector in(3, (double) x, (double) y, 1.0), 
+		   out(3, .0, .0, .0);
+
+	out = (* transf) * in;
+
+	return new Point(out.getElement(0), out.getElement(1));
+}
+
+/**
  * Contructor of the arc class.
  * @param   Point2D     c   The center of the circunference associated to the arc.
  * @param   Point2D     s   The start point of the arc.
@@ -105,19 +159,21 @@ Point::distance(Point p1, Point p2)
  */
 Arc::Arc(Point c, Point s, GLfloat a)
 {
-    this->center = c;
-    this->start = s;
-    this->angle = a;
+    center = c;
+    start = s;
+    angle = a;
 
+	org[0] = c.x;
+	org[1] = c.y;
     /* The angle must be defined between 0 and 2 * PI, so we calculate the equivalent one. */
-    while (this->angle > 360.0f)
-        this->angle -= 360.0f;
+    while (angle > 360.0f)
+        angle -= 360.0f;
 
-    while (this->angle < 0)
-        this->angle += 360.0f;
+    while (angle < 0)
+        angle += 360.0f;
 
-	if (this->angle == 360.0f)
-		this->mode = GL_LINE_LOOP;
+	if (angle == 360.0f)
+		mode = GL_LINE_LOOP;
 }
 
 /**
@@ -126,25 +182,24 @@ Arc::Arc(Point c, Point s, GLfloat a)
 Point2DList *
 Arc::print() {
     GLfloat ang_step = PI / POINT_PREC, ang;
-    GLfloat rad = Point::distance(this->start, this->center);
+    GLfloat rad = Point::distance(start, center);
     GLfloat vpx, vpy;
     Point2DList * list = new Point2DList();
 
     /* Calculating the initial angle. */
-    if (this->start.x != 0)
-        ang = atan(this->start.y / this->start.x);
-    else if (this->start.y > 0)
+    if (start.x != 0)
+        ang = atan(start.y / start.x);
+    else if (start.y > 0)
         ang = PI / 2;
     else
         ang = 3 * PI / 2;
 
     /* Calculating and printing the required points. */
-    while (ang < this->angle * PI / 180.0f) {
-        vpx = rad * cos(ang) + this->center.x;
-        vpy = rad * sin(ang) + this->center.y;
+    while (ang < angle * PI / 180.0f) {
+        vpx = rad * cos(ang) + center.x;
+        vpy = rad * sin(ang) + center.y;
 
-        list->push_back(new Point(vpx, vpy));
-        
+	   	list->push_back(Point(vpx, vpy).transform(this));
         ang += ang_step;
     }
     return list;
@@ -164,19 +219,19 @@ Arc::getEnd()
     GLint   x, y;
 
     /* Getting the radius of the arc. */
-    radius = Point::distance(this->start, this->center);
+    radius = Point::distance(start, center);
 
     /* Getting the initial angle. */
-    if (this->start.x != 0)
-        sangle = atan(this->start.y / this->start.x);
-    else if (this->start.y > 0)
+    if (start.x != 0)
+        sangle = atan(start.y / start.x);
+    else if (start.y > 0)
         sangle = PI / 2;
     else
         sangle = 3 * PI / 2;
 
     /* Getting the coordinates of the new point. */
-    x = this->center.x + radius * cos(sangle + (this->angle * PI / 180.0f));
-    y = this->center.y + radius * sin(sangle + (this->angle * PI / 180.0f));
+    x = center.x + radius * cos(sangle + (angle * PI / 180.0f));
+    y = center.y + radius * sin(sangle + (angle * PI / 180.0f));
 
     end = new Point(x, y);
 
@@ -188,7 +243,7 @@ Arc::getEnd()
  */
 Sector::Sector(Point c, Point s, GLfloat a) : Arc(c, s, a)
 {
-	this->mode = GL_LINE_LOOP;
+	mode = GL_LINE_LOOP;
 }
 
 /**
@@ -200,10 +255,10 @@ Sector::print()
     Point2DList * list;
 
     /* Making the arc for the sector. */
-    Arc   arc(this->center, this-> start, this->angle);
+    Arc   arc(center,  start, angle);
 
     list = arc.print();
-    list->push_front(new Point(this->center.x, this->center.y));
+    list->push_front(Point(center.x, center.y).transform(this));
 
     return list;
 }
@@ -224,8 +279,11 @@ Circle::Circle(Point c, GLint radius) : Arc(c, Point(c.x + radius, c.y), 360.0f)
  */
 Segment::Segment(Point sp, Point ep)
 {
-    this->start = sp;
-    this->end = ep;
+    start = sp;
+    end = ep;
+
+	org[0] = (sp.x + ep.x) / 2.0;
+	org[1] = (sp.y + ep.y) / 2.0;
 }
 
 /**
@@ -236,8 +294,8 @@ Segment::print()
 {
     Point2DList * list = new Point2DList();
 
-    list->push_back(new Point(this->start.x, this->start.y));
-    list->push_back(new Point(this->end.x, this->end.y));
+    list->push_back(Point(start.x, start.y).transform(this));
+    list->push_back(Point(end.x, end.y).transform(this));
 
     return list;
 }
@@ -252,8 +310,8 @@ Polygon::Polygon(Point2DList list)
     Point2DList::iterator   iter;
 
     for (iter = list.begin(); iter != list.end(); iter++)
-        this->pointList.push_back(*iter);
-	this->mode = GL_LINE_LOOP;
+        pointList.push_back(*iter);
+	mode = GL_LINE_LOOP;
 }
 
 /**
@@ -267,8 +325,8 @@ Polygon::Polygon(const Point ** list, int number)
     int idx;
 
     for (idx = 0; idx < number; idx++)
-        this->pointList.push_back((Point *)list[idx]);
-	this->mode = GL_LINE_LOOP;
+        pointList.push_back((Point *)list[idx]);
+	mode = GL_LINE_LOOP;
 }
 
 /**
@@ -282,10 +340,10 @@ Polygon::print()
     Point * point;
 
     /* Calculating the normalized points of the polygon in order to print it. */
-    for (iter = this->pointList.begin(); iter != this->pointList.end(); iter++) {
+    for (iter = pointList.begin(); iter != pointList.end(); iter++) {
         point = *iter;
 
-        list->push_back(new Point(point->x, point->y));
+        list->push_back(Point(point->x, point->y).transform(this));
     }
 
     return list;
@@ -302,20 +360,20 @@ Polygon::print()
  */
 EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
 {
-    this->center = cen;
-    this->start = st;
-    this->xMod = a;
-    this->yMod = b;
-    this->angle = ang;
+    center = cen;
+    start = st;
+    xMod = a;
+    yMod = b;
+    angle = ang;
 
     /* Sanitizing the angle. */
-    while (this->angle > 360.0f)
-        this->angle -= 360.0f;
-    while (this->angle < 0)
-        this->angle += 360.0f;
+    while (angle > 360.0f)
+        angle -= 360.0f;
+    while (angle < 0)
+        angle += 360.0f;
 
-	if (this->angle == 360.0f)
-		this->mode = GL_LINE_LOOP;
+	if (angle == 360.0f)
+		mode = GL_LINE_LOOP;
 }
 
 /**
@@ -329,20 +387,20 @@ EllArc::print()
     Point2DList *list = new Point2DList();
 
     /* Calculating the initial angle. */
-    if (this->start.x != 0)
-        ang = atan(this->start.y / this->start.x);
-    else if (this->start.y > 0)
+    if (start.x != 0)
+        ang = atan(start.y / start.x);
+    else if (start.y > 0)
         ang = PI / 2.0f;
     else
         ang = 1.5f * PI;
-	end_ang = this->angle * PI / 180.0f;
+	end_ang = angle * PI / 180.0f;
 
     /* Calculating the points and printing them. */
     while (ang < end_ang) {
-        vpx = this->xMod * cos(ang) + this->center.x;
-        vpy = this->yMod * sin(ang) + this->center.y;
+        vpx = xMod * cos(ang) + center.x;
+        vpy = yMod * sin(ang) + center.y;
 
-        list->push_back(new Point(vpx, vpy));
+        list->push_back(Point(vpx, vpy).transform(this));
         ang += ang_step;
     }
 
@@ -361,16 +419,16 @@ EllArc::getEnd()
 	GLfloat xcomp, ycomp;
 
 	/* Calculating the starting angle */
-	if (this->start.x != 0)
-		sangle = atan(this->start.y / this->start.x);
-	else if (this->start.y > 0)
+	if (start.x != 0)
+		sangle = atan(start.y / start.x);
+	else if (start.y > 0)
 		sangle = PI / 2;
 	else
 		sangle = 1.5 * PI;
 
 	/* Getting the coordinates. */
-	xcomp = this->xMod * cos( sangle + (this->angle * PI / 180.0f)) + this->center.x;
-	ycomp = this->yMod * sin( sangle + (this->angle * PI / 180.0f)) + this->center.y;
+	xcomp = xMod * cos( sangle + (angle * PI / 180.0f)) + center.x;
+	ycomp = yMod * sin( sangle + (angle * PI / 180.0f)) + center.y;
 
 	return new Point(xcomp, ycomp);
 }
@@ -401,14 +459,14 @@ RegPol::RegPol(Point center, unsigned int sides, GLint rad)
 	ang_step = 360.0f / sides;
 
 	for (idx = 0; idx < sides; idx++) {
-		this->pointList.push_back(
+		pointList.push_back(
 				new Point(
 					center.x + rad * cos(idx * ang_step * PI / 180.0f),
 				   	center.y + rad * sin(idx * ang_step * PI / 180.0f)
 					)
 				);
 	}
-	this->mode = GL_LINE_LOOP;
+	mode = GL_LINE_LOOP;
 }
 
 /**
@@ -419,9 +477,9 @@ RegPol::RegPol(Point center, unsigned int sides, GLint rad)
  */
 Rectangle::Rectangle(Point p1, Point p2)
 {
-	this->pointList.push_back(new Point(p1.x, p1.y));
-	this->pointList.push_back(new Point(p1.x, p2.y));
-	this->pointList.push_back(new Point(p2.x, p2.y));
-	this->pointList.push_back(new Point(p2.x, p1.y));
-	this->mode = GL_LINE_LOOP;
+	pointList.push_back(new Point(p1.x, p1.y));
+	pointList.push_back(new Point(p1.x, p2.y));
+	pointList.push_back(new Point(p2.x, p2.y));
+	pointList.push_back(new Point(p2.x, p1.y));
+	mode = GL_LINE_LOOP;
 }

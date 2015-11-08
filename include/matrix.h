@@ -6,7 +6,9 @@
  */
 
 #ifndef _MATRIX_H
+#define _MATRIX_H
 #include <stdarg.h>
+#include <vector>
 
 class Matrix;
 
@@ -17,9 +19,10 @@ class Vector {
 		friend class Matrix;
     protected:
         unsigned int nelem;
-        double  *elements;
+		std::vector<double> * elements;
     public:
         Vector(unsigned int nitems = 0, ...);
+		~Vector();
 
         /* The scalar product of the vector. */
         double operator * (const Vector v1);
@@ -31,6 +34,9 @@ class Vector {
         /* Multiplying a constant to a Vector. */
         Vector operator * (double value);
 
+		/* Asignates the same values to another vector. */
+		Vector operator = (Vector vect);
+
 		/* Getting the element at position i. */
 		double getElement(unsigned int i);
 };
@@ -41,11 +47,12 @@ class Vector {
 class Matrix {
     protected:
         unsigned int nrows, ncolumns;
-        double * matrix;
+		std::vector<double> * matrix;
 
         Matrix getAdjoint(unsigned int row, unsigned int col) const;
     public:
         Matrix(unsigned int rows = 0, unsigned int cols = 0, ...);
+		virtual ~Matrix();
 
         /* Gets the element in the (idx, idy) position. */
         double getElement (unsigned int row, unsigned int col) const;
@@ -63,6 +70,9 @@ class Matrix {
 		/* Multiplies a matrix to a vector. */
 		Vector operator * (const Vector vect);
 
+		/* Copies the values of the matrix to the new matrix. */
+		Matrix operator = (const Matrix mat);
+
         /* Makes the transponse of the matrix. */
         Matrix transponse();
 
@@ -74,9 +84,12 @@ class Matrix {
         
 		/* Sets an element of the matrix. */
 		void setElement(unsigned int row, unsigned int col, double value);
+
+		/* Returns the identity matrix. */
+		static Matrix * identity(int size);
 #ifdef DEBUG
         /* Printing a matrix only makes sense on debug. */
-        virtual void print();
+        virtual void print() const;
 #endif
 };
 

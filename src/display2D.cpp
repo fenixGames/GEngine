@@ -7,7 +7,7 @@
  */
 #include "display.h"
 #include "geometry.h"
-
+#include <stdio.h>
 
 using namespace GEngine;
 using namespace D2D;
@@ -26,7 +26,7 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
     Point2DList             * pointList;
     Point2DList::iterator   pointIter;
     Figure2DList::iterator  iter;
-	Vector					*in, out;
+	Vector				 	out(3, 0, 0, 0);
 	double					vpx, vpy;
 
     /* If the list is NULL we should draw nothing. */
@@ -41,8 +41,7 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
             /* Convert point, translate it and rotate it if needed in absolute coordinates. */
 			vpx = (*pointIter)->x;
 			vpy = (*pointIter)->y;
-			in = new Vector(3, vpx, vpy, 1.0);
-			out = (* trans) * (*in);
+			out = (* trans) * Vector(3, vpx, vpy, 1.0);
 
 			/* Printing the points. */
 			glVertex2d(out.getElement(0), out.getElement(1));
@@ -61,13 +60,13 @@ void
 Display::translate2D(Point  *point)
 {
     double  x11, x12, y11, y12;
-    x11 = (2.0 * point->x) / (this->screen[0] - 1.0);
+    x11 = (2.0 * point->x) / (screen[0] - 1.0);
     x12 = point->x;
-    y11 = (2.0 * point->y) / (this->screen[1] - 1.0);
+    y11 = (2.0 * point->y) / (screen[1] - 1.0);
     y12 = point->y;
     Matrix  translate(3, 3, x11, 0.0, x12, 0.0, y11, y12, 0.0, 0.0, 1.0);
 
-    * this->trans = (*this->trans) * translate;
+    * trans = (*trans) * translate;
 }
 
 /**
@@ -78,12 +77,12 @@ void
 Display::add2DFigure(Figure * figure)
 {
 	/* Setting the list of figures. */
-	if (this->figures2D == NULL )
-		this->figures2D = new Figure2DList();
+	if (figures2D == NULL )
+		figures2D = new Figure2DList();
 
 	/* Adding the figure. */
-	if (this->figures2D != NULL)
-	    this->figures2D->push_back(figure);
+	if (figures2D != NULL)
+	    figures2D->push_back(figure);
 }
 
 /**
@@ -94,8 +93,8 @@ void
 Display::remove2DFigure(Figure *figure)
 {
 	/* Removing the figure. */
-	if (this->figures2D != NULL)
-	    this->figures2D->remove(figure);
+	if (figures2D != NULL)
+	    figures2D->remove(figure);
 }
 
 /**
@@ -106,11 +105,11 @@ Figure *
 Display::pop2DFigure()
 {
 	/* If the list has not been set return NULL. */
-	if (this->figures2D == NULL)
+	if (figures2D == NULL)
 		return NULL;
 
-    Figure * item = this->figures2D->back();
-    this->figures2D->pop_back();
+    Figure * item = figures2D->back();
+    figures2D->pop_back();
 
     return item;
 }
@@ -123,11 +122,11 @@ Figure *
 Display::shift2DFigure()
 {
 	/* If the list has not been set return NULL. */
-	if (this->figures2D == NULL)
+	if (figures2D == NULL)
 		return NULL;
 
-    Figure * item = this->figures2D->front();
-    this->figures2D->pop_front();
+    Figure * item = figures2D->front();
+    figures2D->pop_front();
 
     return item;
 }
@@ -140,10 +139,10 @@ Figure *
 Display::first2DFigure()
 {
 	/* If the list has not been set return NULL. */
-	if (this->figures2D == NULL)
+	if (figures2D == NULL)
 		return NULL;
 
-    return this->figures2D->front();
+    return figures2D->front();
 }
 
 /**
@@ -154,9 +153,9 @@ Figure *
 Display::last2DFigure()
 {
 	/* If the list has not been set return NULL. */
-	if (this->figures2D == NULL)
+	if (figures2D == NULL)
 		return NULL;
 
-    return this->figures2D->back();
+    return figures2D->back();
 }
 
