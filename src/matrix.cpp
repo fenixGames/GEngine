@@ -19,12 +19,8 @@ Matrix::Matrix(unsigned int rows, unsigned int cols, ...)
 
     nrows = rows;
     ncolumns = cols;
-	matrix = NULL;
 
-	if (rows == 0 || cols == 0)
-		return;
-
-	matrix = new std::vector<double>(rows * cols);
+	matrix = new std::vector<double>(rows * cols, 0.0);
 
     /* Going through the list of arguments and storing the values. */
     va_start(list, cols);
@@ -37,6 +33,33 @@ Matrix::Matrix(unsigned int rows, unsigned int cols, ...)
 	va_end(list);
 }
 
+/**
+ * Asignates all the elements of a matrix to the new one.
+ *
+ * @param	Matrix	mat		The matrix whose values are reasignated.
+ *
+ * @return	The new matrix.
+ */
+Matrix::Matrix(const Matrix& mat)
+{
+	unsigned int idx, idy;
+
+	nrows = mat.nrows;
+	ncolumns = mat.ncolumns;
+
+	matrix = new std::vector<double>(nrows * ncolumns);
+
+	/* Setting the new values. */
+	for (idx = 0; idx < nrows; idx++)
+		for (idy = 0; idy < ncolumns; idy++)
+			setElement(idx, idy, mat.getElement(idx, idy));
+
+}
+
+Matrix::~Matrix()
+{
+	delete matrix;
+}
 
 /**
  * Retrieves the element in the (row, col) position.
@@ -52,7 +75,7 @@ Matrix::getElement(unsigned int row, unsigned int col) const
     if (row >= nrows || col >= ncolumns)
         return 0.0;
 
-    return (*matrix)[(row * ncolumns) + col];
+    return matrix->at((row * ncolumns) + col);
 }
 
 /**
@@ -207,29 +230,32 @@ Matrix::operator * (const Vector vect)
 }
 
 /**
- * Asignates all the elements of a matrix to the new one.
+ * Asignates the resources of the matrix to a new one.
  *
- * @param	Matrix	mat		The matrix whose values are reasignated.
- *
+ * @param	Matrix	mat	The matrix to copy.
  * @return	The new matrix.
  */
-Matrix
-Matrix::operator = (Matrix mat)
+Matrix&
+Matrix::operator = (const Matrix& mat)
 {
 	unsigned int idx, idy;
 
+	/* Empty the current matrix. */
+	matrix->clear();
+
+	/* Resize it. */
+	matrix->resize(mat.nrows * mat.ncolumns);
 	nrows = mat.nrows;
 	ncolumns = mat.ncolumns;
 
-	matrix = new std::vector<double>(nrows * ncolumns);
-
-	/* Setting the new values. */
+	/* Set the new elements. */
 	for (idx = 0; idx < nrows; idx++)
 		for (idy = 0; idy < ncolumns; idy++)
 			setElement(idx, idy, mat.getElement(idx, idy));
 
 	return * this;
 }
+
 /**
  * Calculates the transponse of a Matrix. That would be to switch rows and columns.
  *
@@ -275,7 +301,7 @@ Matrix::getAdjoint(unsigned int row, unsigned int col) const
     for (idx = 0, ida = 0; idx < nrows; idx++) {
         for (idy = 0; idy < ncolumns; idy++) {
             if (idx != row && idy != col) {
-                (* adj.matrix)[ida] = getElement(idx, idy);
+                (*adj.matrix)[ida] = getElement(idx, idy);
                 ida++;
             }
         }
@@ -302,14 +328,14 @@ Matrix::determinant() const
 
     /* If the matrix is 1 x 1, return the value. */
     if (nrows == 1)
-        return (* matrix)[0];
+        return  matrix->at(0);
 
     /* Getting the determinant through the adjoint of the matrix. */
     for (fixed = 0; fixed < nrows; fixed++) {
         adj = getAdjoint(0, fixed);
 
         /* Calculating the determinant. */
-        value += mod * adj.determinant() * (* matrix)[fixed];
+        value += mod * adj.determinant() *  matrix->at(fixed);
         mod *= -1.0;
     }
 
@@ -361,7 +387,7 @@ Matrix::setElement(unsigned int row, unsigned int col, double value)
     if (row >= nrows || col >= ncolumns)
         return;
 
-    (* matrix)[(row * ncolumns) + col] = value;
+    (*matrix)[(row * ncolumns) + col] = value;
 }
 #ifdef DEBUG
 void
@@ -386,29 +412,21 @@ Matrix::print() const
  *
  * @return 	The identity matrix.
  */
-Matrix *
+Matrix
 Matrix::identity(int size)
 {
 	Matrix * mat = new Matrix();
 	int idx, idy;
 
-	if (mat != NULL) {
-		mat->nrows = size;
-		mat->ncolumns = size;
-		mat->matrix = new std::vector<double>(size * size);
+	mat->nrows = size;
+	mat->ncolumns = size;
+	mat->matrix = new std::vector<double>(size * size);
 
-		/* Setting the values. */
-		for (idx = 0; idx < size; idx++)
-			for (idy = 0; idy < size; idy++)
-				mat->setElement(idx, idy, (idx == idy ? 1 : 0));
-	}
+	/* Setting the values. */
+	for (idx = 0; idx < size; idx++)
+		for (idy = 0; idy < size; idy++)
+			mat->setElement(idx, idy, (idx == idy ? 1 : 0));
 
-	return mat;
-}
-
-Matrix::~Matrix()
-{
-	if (matrix != NULL)
-		matrix->clear();
+	return * mat;
 }
 

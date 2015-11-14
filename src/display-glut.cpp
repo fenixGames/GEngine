@@ -60,6 +60,14 @@ Display::Display(GLuint width, GLuint height, GLuint x, GLuint y)
 	}
 }
 
+Display::~Display()
+{
+	if (title != NULL)
+		free(title);
+	if (figures2D != NULL)
+		delete figures2D;
+}
+
 /**
  * Draws everything on the screen.
  */

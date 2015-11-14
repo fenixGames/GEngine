@@ -47,6 +47,7 @@ class GEngine::Display {
         static void displayFunc();
     public:
         Display(GLuint width, GLuint height, GLuint x = 0, GLuint y = 0);
+		~Display();
 
         /* Prints everything on the screen. */
         int print();

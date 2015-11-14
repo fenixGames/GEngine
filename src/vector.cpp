@@ -28,6 +28,11 @@ Vector::Vector(unsigned int nitems, ...)
 	va_end(list);
 }
 
+Vector::Vector(const Vector& vect)
+{
+	nelem = vect.nelem;
+	elements = new std::vector<double>(*vect.elements);
+}
 /**
  * Adds two vector and creates a new one.
  *
@@ -131,14 +136,12 @@ Vector::operator * (double value)
 Vector
 Vector::operator = (Vector vect)
 {
-	unsigned int idx;
-
 	nelem = vect.nelem;
-	elements = new std::vector<double>(nelem);
 
-	/* Assignating the new elements. */
-	for (idx = 0; idx < nelem; idx++)
-		(* elements)[idx] = vect.getElement(idx);
+	if (elements != NULL)
+		delete elements;
+
+	elements = new std::vector<double>(*vect.elements);
 
 	return *this;
 }
@@ -164,7 +167,5 @@ Vector::getElement(unsigned int index)
  */
 Vector::~Vector()
 {
-	if (elements != NULL)
-		elements->clear();
+	delete elements;
 }
-

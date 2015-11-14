@@ -48,6 +48,7 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
         }
 		glEnd();
     }
+	delete pointList;
 	return 0;
 }
 

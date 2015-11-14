@@ -22,6 +22,7 @@ class Vector {
 		std::vector<double> * elements;
     public:
         Vector(unsigned int nitems = 0, ...);
+		Vector(const Vector& vect);
 		~Vector();
 
         /* The scalar product of the vector. */
@@ -52,6 +53,7 @@ class Matrix {
         Matrix getAdjoint(unsigned int row, unsigned int col) const;
     public:
         Matrix(unsigned int rows = 0, unsigned int cols = 0, ...);
+		Matrix(const Matrix& matrix);
 		virtual ~Matrix();
 
         /* Gets the element in the (idx, idy) position. */
@@ -70,8 +72,8 @@ class Matrix {
 		/* Multiplies a matrix to a vector. */
 		Vector operator * (const Vector vect);
 
-		/* Copies the values of the matrix to the new matrix. */
-		Matrix operator = (const Matrix mat);
+		/* Copy asignment. */
+		Matrix& operator= (const Matrix& mat);
 
         /* Makes the transponse of the matrix. */
         Matrix transponse();
@@ -86,7 +88,7 @@ class Matrix {
 		void setElement(unsigned int row, unsigned int col, double value);
 
 		/* Returns the identity matrix. */
-		static Matrix * identity(int size);
+		static Matrix identity(int size);
 #ifdef DEBUG
         /* Printing a matrix only makes sense on debug. */
         virtual void print() const;

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <GL/glut.h>
 #include <stdio.h>
+#include <string.h>
 
 #define POINT_PREC  180.0f
 #define PI  M_PI
@@ -15,8 +16,16 @@ Figure::Figure()
 {
     solid = false;
 	mode = GL_LINES;
-	transf = Matrix::identity(3);
+	transf = Matrix(Matrix::identity(3));
 	org[0] = org[1] = 0;
+}
+
+Figure::Figure(const Figure& fig)
+{
+	solid = fig.solid;
+	mode = fig.mode;
+	transf = Matrix(fig.transf);
+	memcpy(org, fig.org, 2* sizeof(int));
 }
 
 /**
@@ -49,8 +58,19 @@ Figure::rotate(GLfloat angle)
 	angle *= M_PI / 180.0f;
 	Matrix rot(3, 3, cos(angle), -sin(angle), 0.0, sin(angle), cos(angle), 0.0, 0.0, 0.0, 1.0), tmp;
 	
-	tmp = * transf;
-	* transf = tmp *  rot;
+	tmp = transf;
+	transf = tmp *  rot;
+}
+
+Figure&
+Figure::operator = (const Figure& fig)
+{
+	solid = fig.solid;
+	mode = fig.mode;
+	transf = Matrix(fig.transf);
+	memcpy(org, fig.org, 2 * sizeof(int));
+
+	return * this;
 }
 
 /**
@@ -61,9 +81,8 @@ Figure::rotate(GLfloat angle)
  */
 Point::Point(GLint xx, GLint yy)
 {
-    x = org[0] = xx;
-    y = org[1] = yy;
-	mode = GL_POINTS;
+    x = xx;
+    y = yy;
 }
 
 /**
@@ -77,9 +96,11 @@ Point::transform(Figure * ptr)
 	Vector vect, out;
 
 	vect = Vector(3, (double)x - ptr->org[0], (double) y - ptr->org[1], 1.0);
-	out = (*ptr->transf) * vect;
+	out = (ptr->transf) * vect;
 
-	ptr->transf->print();
+#ifdef DEBUG
+	ptr->transf.print();
+#endif
 	printf("point (%d, %d) org (%d, %d)\n", x, y, ptr->org[0], ptr->org[1]);
 	printf("in = (%d, %d), out = (%f, %f)\n", x - ptr->org[0], y - ptr->org[1],
 				   	out.getElement(0), out.getElement(1));
@@ -95,7 +116,7 @@ Point::print()
 {
     Point2DList * list = new Point2DList();
 
-    list->push_back(transform(this));
+    list->push_back(this);
 
     return list;
 }
@@ -159,8 +180,8 @@ Point::operator * (Matrix * transf)
  */
 Arc::Arc(Point c, Point s, GLfloat a)
 {
-    center = c;
-    start = s;
+    center.x = c.x; center.y = c.y;
+    start.x = s.x; start.y = s.y;
     angle = a;
 
 	org[0] = c.x;

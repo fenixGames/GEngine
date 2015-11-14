@@ -42,10 +42,11 @@ class D2D::Figure {
         bool solid; /* Indicates if the figure has solid color. */
 		GLenum	mode;	/* Indicates the mode to use to print. */
     public:
-		Matrix	*transf;	/* The transformation matrix. */
+		Matrix	transf;	/* The transformation matrix. */
 		int		org[2];		/* The local origin of coordinates for the figure. */
 	
         Figure();
+		Figure(const Figure& fig);
 
         /* Virtual function needed to be overriden. */
         virtual Point2DList * print() = 0; 
@@ -58,12 +59,15 @@ class D2D::Figure {
 
 		/* Returns the mode to be used to print the figure. */
 		GLenum getMode();
+
+		/* Copy the figure. */
+		Figure& operator = (const Figure& fig);
 };
 
 /**
  * The class used to print a 2D point.
  */
-class D2D::Point : public D2D::Figure {
+class D2D::Point  {
     public:
         /* These components are public in order to allow all the figures access them. */
         GLint   x, /* The horizontal component of the point. */
