@@ -33,9 +33,11 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
     if (list == NULL)
         return 0;
 
+
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
         pointList = (*iter)->print();
+		glColor3d((*iter)->getRed(), (*iter)->getGreen(), (*iter)->getBlue());
 		glBegin((*iter)->getMode());
         for (pointIter = pointList->begin(); pointIter != pointList->end(); pointIter++) {
             /* Convert point, translate it and rotate it if needed in absolute coordinates. */

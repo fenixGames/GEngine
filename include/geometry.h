@@ -38,11 +38,13 @@ namespace D3D {
  * The abstract class for the printable objects.
  */
 class D2D::Figure {
+		friend class D2D::Point;
     protected:
         bool solid; /* Indicates if the figure has solid color. */
 		GLenum	mode;	/* Indicates the mode to use to print. */
+		GLfloat	angle;	/* The angle used in the rotation. */
+		GLdouble color[3]; /* The color of the figure, some figures could have complex coloring (TODO). */
     public:
-		Matrix	transf;	/* The transformation matrix. */
 		int		org[2];		/* The local origin of coordinates for the figure. */
 	
         Figure();
@@ -59,6 +61,14 @@ class D2D::Figure {
 
 		/* Returns the mode to be used to print the figure. */
 		GLenum getMode();
+
+		/* Sets the color for the figure. */
+		void setColor(GLdouble red, GLdouble green, GLdouble blue);
+
+		/* Gets the corresponding color. */
+		GLdouble getRed();
+		GLdouble getGreen();
+		GLdouble getBlue();
 
 		/* Copy the figure. */
 		Figure& operator = (const Figure& fig);

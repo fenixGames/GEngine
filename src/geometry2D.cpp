@@ -16,16 +16,17 @@ Figure::Figure()
 {
     solid = false;
 	mode = GL_LINES;
-	transf = Matrix(Matrix::identity(3));
-	org[0] = org[1] = 0;
+	org[0] = org[1] = angle = 0;
+	memset(color, 0, sizeof(GLdouble) * 3);
 }
 
 Figure::Figure(const Figure& fig)
 {
 	solid = fig.solid;
 	mode = fig.mode;
-	transf = Matrix(fig.transf);
+	angle = fig.angle;
 	memcpy(org, fig.org, 2* sizeof(int));
+	memcpy(color, fig.color, 3 * sizeof(GLdouble));
 }
 
 /**
@@ -53,21 +54,57 @@ Figure::getMode()
  * @param	GLfloat	angle	The angle to rotate the figure.
  */
 void
-Figure::rotate(GLfloat angle)
+Figure::rotate(GLfloat ang)
 {
-	angle *= M_PI / 180.0f;
-	Matrix rot(3, 3, cos(angle), -sin(angle), 0.0, sin(angle), cos(angle), 0.0, 0.0, 0.0, 1.0), tmp;
-	
-	tmp = transf;
-	transf = tmp *  rot;
+	angle = ang * M_PI / 180.0f;
 }
 
+/**
+ * Sets the color for the figure.
+ * @param	GLdouble	red		The red component of the color.
+ * @param	GLdouble	green	The green component of the color.
+ * @param	GLdouble	blue	The blue component of the color.
+ */
+void
+Figure::setColor(GLdouble red, GLdouble green, GLdouble blue)
+{
+	color[0] = red;
+	color[1] = green;
+	color[2] = blue;
+}
+
+/**
+ * The three following functions need no comments, retrieves the color component for the figure.
+ */
+GLdouble
+Figure::getRed()
+{
+	return color[0];
+}
+
+GLdouble
+Figure::getGreen()
+{
+	return color[1];
+}
+
+GLdouble
+Figure::getBlue()
+{
+	return color[2];
+}
+
+/**
+ * Copy asignment, copies the figure.
+ * @param	Figure	fig		The figure to copy.
+ * @return	The copied figure.
+ */
 Figure&
 Figure::operator = (const Figure& fig)
 {
 	solid = fig.solid;
 	mode = fig.mode;
-	transf = Matrix(fig.transf);
+	angle = fig.angle;
 	memcpy(org, fig.org, 2 * sizeof(int));
 
 	return * this;
@@ -93,18 +130,18 @@ Point::Point(GLint xx, GLint yy)
 Point *
 Point::transform(Figure * ptr)
 {
-	Vector vect, out;
+	Point * end = new Point(* this);
+	GLint rx, ry;
 
-	vect = Vector(3, (double)x - ptr->org[0], (double) y - ptr->org[1], 1.0);
-	out = (ptr->transf) * vect;
+	rx = end->x - ptr->org[0];
+	ry = end->y - ptr->org[1];
 
-#ifdef DEBUG
-	ptr->transf.print();
-#endif
-	printf("point (%d, %d) org (%d, %d)\n", x, y, ptr->org[0], ptr->org[1]);
-	printf("in = (%d, %d), out = (%f, %f)\n", x - ptr->org[0], y - ptr->org[1],
-				   	out.getElement(0), out.getElement(1));
-	return new Point(out.getElement(0) + ptr->org[0], out.getElement(1) + ptr->org[1]);
+	printf("rx, ry = %d, %d\n", rx, ry);
+	end->x = ptr->org[0] + (rx * cos(ptr->angle) - ry * sin(ptr->angle));
+	end->y = ptr->org[1] + (rx * sin(ptr->angle) + ry * cos(ptr->angle));
+
+	printf("org (%d, %d) => end (%d, %d) angle = %f\n", x, y, end->x, end->y, ptr->angle * 180 / M_PI);
+	return end;
 }
 
 
@@ -207,6 +244,9 @@ Arc::print() {
     GLfloat vpx, vpy;
     Point2DList * list = new Point2DList();
 
+	if (angle == 360.0f && solid)
+		mode = GL_POLYGON;
+
     /* Calculating the initial angle. */
     if (start.x != 0)
         ang = atan(start.y / start.x);
@@ -275,6 +315,9 @@ Sector::print()
 {
     Point2DList * list;
 
+	if (solid)
+		mode = GL_POLYGON;
+
     /* Making the arc for the sector. */
     Arc   arc(center,  start, angle);
 
@@ -290,6 +333,7 @@ Sector::print()
  */
 Circle::Circle(Point c, GLint radius) : Arc(c, Point(c.x + radius, c.y), 360.0f)
 {
+	mode = GL_POLYGON;
 }
 
 /**
@@ -360,6 +404,9 @@ Polygon::print()
     Point2DList * list = new Point2DList();
     Point * point;
 
+	if (solid)
+		mode = GL_POLYGON;
+
     /* Calculating the normalized points of the polygon in order to print it. */
     for (iter = pointList.begin(); iter != pointList.end(); iter++) {
         point = *iter;
@@ -386,6 +433,8 @@ EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
     xMod = a;
     yMod = b;
     angle = ang;
+	org[0] = cen.x;
+	org[1] = cen.y;
 
     /* Sanitizing the angle. */
     while (angle > 360.0f)
@@ -406,6 +455,9 @@ EllArc::print()
     GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
     GLfloat vpx, vpy;
     Point2DList *list = new Point2DList();
+
+	if (angle == 360.0f && solid)
+		mode = GL_POLYGON;
 
     /* Calculating the initial angle. */
     if (start.x != 0)
@@ -502,5 +554,9 @@ Rectangle::Rectangle(Point p1, Point p2)
 	pointList.push_back(new Point(p1.x, p2.y));
 	pointList.push_back(new Point(p2.x, p2.y));
 	pointList.push_back(new Point(p2.x, p1.y));
-	mode = GL_LINE_LOOP;
+	
+	if (solid)
+		mode = GL_POLYGON;
+	else
+		mode = GL_LINE_LOOP;
 }

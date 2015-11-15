@@ -74,7 +74,6 @@ Display::~Display()
 void
 Display::displayFunc()
 {
-    Figure2DList::iterator iter2D;  /* The iterator of the figure list to print them. */
     Figure2DList *list2D = NULL;    /* Shortcut for Display::theDisplay->figures2D */
     /* TODO
     Figure3DList::iterator iter3D;  // The iterator for the 3D figure list to print them.
@@ -84,7 +83,6 @@ Display::displayFunc()
     /* Getting the figure list. */
     if (Display::theDisplay != NULL && Display::theDisplay->figures2D != NULL) {
         list2D = Display::theDisplay->figures2D;
-        iter2D = list2D->begin();
     } 
 
     /* Cleans the screen. */
@@ -96,12 +94,17 @@ Display::displayFunc()
 
     /* Setting the Basic axis to debug the engine's printing. */
 #ifdef DEBUG
-    glBegin(GL_LINES);
+	glPushAttrib(GL_ENABLE_BIT);
+	glEnable(GL_LINE_STIPPLE);
+	glLineStipple(1, 0xF0F0);
+	glBegin(GL_LINES);
     glVertex2f(-1.0f, 0.0f);
     glVertex2f(1.0f, 0.0f);
     glVertex2f(0.0f, 1.0f);
     glVertex2f(0.0f, -1.0f);
     glEnd();
+
+	glPopAttrib();
 #endif
 
     glPointSize(4.0f);
@@ -172,6 +175,8 @@ Display::print()
 #ifdef DEBUG
     trans->print();
 #endif
+
+	/* Main loop should be on the GEngine class when finished. */
 	glutMainLoop();
     return 0;
 }
