@@ -33,7 +33,6 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
     if (list == NULL)
         return 0;
 
-
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
         pointList = (*iter)->print();
@@ -46,7 +45,7 @@ print2D(Figure2DList * list, int winId, Matrix *trans)
 			out = (* trans) * Vector(3, vpx, vpy, 1.0);
 
 			/* Printing the points. */
-			glVertex2d(out.getElement(0), out.getElement(1));
+			glVertex3d(out.getElement(0), out.getElement(1), 0.0);
         }
 		glEnd();
     }

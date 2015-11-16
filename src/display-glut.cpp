@@ -76,7 +76,6 @@ Display::displayFunc()
 {
     Figure2DList *list2D = NULL;    /* Shortcut for Display::theDisplay->figures2D */
     /* TODO
-    Figure3DList::iterator iter3D;  // The iterator for the 3D figure list to print them.
     Figure3DList *list3D = NULL;    // Shortcut for Display::theDisplay->figures3D
     */
 
@@ -86,7 +85,7 @@ Display::displayFunc()
     } 
 
     /* Cleans the screen. */
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(Display::theDisplay->position[0], Display::theDisplay->position[1],
             Display::theDisplay->screen[0], Display::theDisplay->screen[1]);
     glColor3f(Display::theDisplay->fgcolor[0],
@@ -158,7 +157,7 @@ Display::print()
 	/* Setting the position and the size of the window. */
     glutInitWindowPosition(position[0], position[1]);
     glutInitWindowSize(screen[0], screen[1]);
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
  
     /* Setting the title of the window. */
     if (title == NULL)   

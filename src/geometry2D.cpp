@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define POINT_PREC  180.0f
+#define POINT_PREC  1800.0f /* 10 points per grad. */
 #define PI  M_PI
 
 using namespace D2D;
@@ -17,6 +17,7 @@ Figure::Figure()
     solid = false;
 	mode = GL_LINES;
 	org[0] = org[1] = angle = 0;
+    buffer = NULL;
 	memset(color, 0, sizeof(GLdouble) * 3);
 }
 
@@ -27,6 +28,17 @@ Figure::Figure(const Figure& fig)
 	angle = fig.angle;
 	memcpy(org, fig.org, 2* sizeof(int));
 	memcpy(color, fig.color, 3 * sizeof(GLdouble));
+
+    if (fig.buffer != NULL)
+        buffer = new Point2DList(*fig.buffer);
+    else
+        buffer = NULL;
+}
+
+Figure::~Figure()
+{
+    if (buffer != NULL)
+        delete buffer;
 }
 
 /**
@@ -111,12 +123,21 @@ Figure::operator = (const Figure& fig)
 }
 
 /**
+ * Sets the motion for a static figure, that means, it just returns.
+ * @param   int     time    The time for the motion, unused for static.
+ */
+void
+StaticFigure::motion(int __unused time)
+{
+}
+
+/**
  * Constructor of the 2D Point class.
  *
  * @param   GLint   xx  The horizontal component of the point.
  * @param   GLint   yy  The vertical component of the point.
  */
-Point::Point(GLint xx, GLint yy)
+Point::Point(GLdouble xx, GLdouble yy)
 {
     x = xx;
     y = yy;
@@ -136,26 +157,10 @@ Point::transform(Figure * ptr)
 	rx = end->x - ptr->org[0];
 	ry = end->y - ptr->org[1];
 
-	printf("rx, ry = %d, %d\n", rx, ry);
 	end->x = ptr->org[0] + (rx * cos(ptr->angle) - ry * sin(ptr->angle));
 	end->y = ptr->org[1] + (rx * sin(ptr->angle) + ry * cos(ptr->angle));
 
-	printf("org (%d, %d) => end (%d, %d) angle = %f\n", x, y, end->x, end->y, ptr->angle * 180 / M_PI);
 	return end;
-}
-
-
-/**
- * Prints a 2D point on the screen.
- */
-Point2DList *
-Point::print()
-{
-    Point2DList * list = new Point2DList();
-
-    list->push_back(this);
-
-    return list;
 }
 
 /**
@@ -207,6 +212,28 @@ Point::operator * (Matrix * transf)
 	out = (* transf) * in;
 
 	return new Point(out.getElement(0), out.getElement(1));
+}
+
+/**
+ * Calculates the point between two other points using the time as a parameter.
+ * This function is usefull for motion.
+ * For time values from 0 to 1 are for interpolation, for negative values are used to
+ * extrapolate from the end point to the initial, and values greater than 1, are for
+ * extrapolation in the other direction.
+ * @param   Point   p1      The initial point.
+ * @param   Point   p2      The final point.
+ * @param   double  time    The time parameter.
+ * @return  The calculated point between the initial and the final at the time "time".
+ */
+Point *
+Point::tween(const Point p1, const Point p2, double time)
+{
+    int xcalc, ycalc;
+
+    xcalc = (1.0 - time) * p1.x + time * p2.x;
+    ycalc = (1.0 - time) * p1.y + time * p2.y;
+
+    return new Point(xcalc, ycalc);
 }
 
 /**
@@ -333,7 +360,10 @@ Sector::print()
  */
 Circle::Circle(Point c, GLint radius) : Arc(c, Point(c.x + radius, c.y), 360.0f)
 {
-	mode = GL_POLYGON;
+    if (solid)
+    	mode = GL_POLYGON;
+    else
+        mode = GL_LINE_LOOP;
 }
 
 /**

@@ -39,7 +39,6 @@ class GEngine::Display {
 
         Figure2DList    * figures2D;
 //        Figure3DList    * figures3D; TODO
-//
         /* Transformation matrix. */
 		Matrix	* trans;
 

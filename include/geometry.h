@@ -18,6 +18,7 @@
 /* The following declarations are needed for the Figure part. */
 namespace D2D {
     class Figure;
+    class StaticFigure;
     class Point;
     class Arc;
     class Sector;
@@ -31,6 +32,7 @@ namespace D2D {
 };
 
 namespace D3D {
+    class Figure;
     class Point;
 };
 
@@ -44,14 +46,17 @@ class D2D::Figure {
 		GLenum	mode;	/* Indicates the mode to use to print. */
 		GLfloat	angle;	/* The angle used in the rotation. */
 		GLdouble color[3]; /* The color of the figure, some figures could have complex coloring (TODO). */
+        Point2DList * buffer;   /* The calculated list of points to be printed. Usefull for movement. */
     public:
 		int		org[2];		/* The local origin of coordinates for the figure. */
 	
         Figure();
 		Figure(const Figure& fig);
+        ~Figure();
 
-        /* Virtual function needed to be overriden. */
+        /* Virtual functions needed to be overriden. */
         virtual Point2DList * print() = 0; 
+        virtual void motion(int time) = 0;
 
         /* By default, all the figures are wired figures, with this, they will be solid. */
         void setSolid();
@@ -75,15 +80,23 @@ class D2D::Figure {
 };
 
 /**
+ * Class for static figures, with no motion.
+ */
+class D2D::StaticFigure : public D2D::Figure {
+    public:
+        void motion(int time);
+};
+
+/**
  * The class used to print a 2D point.
  */
 class D2D::Point  {
     public:
         /* These components are public in order to allow all the figures access them. */
-        GLint   x, /* The horizontal component of the point. */
-                y; /* The vertical component of the point. */
+        GLdouble    x, /* The horizontal component of the point. */
+                    y; /* The vertical component of the point. */
 
-        Point(GLint xx = 0, GLint yy = 0);
+        Point(GLdouble xx = 0, GLdouble yy = 0);
 
         /* Setting the assignator between two points. */
         D2D::Point operator = (D2D::Point);
@@ -94,30 +107,17 @@ class D2D::Point  {
 		/* Transforms the point locally. */
 		Point * transform(Figure * ptr);
 
-        /* Prints the figure. */
-        virtual Point2DList * print();
-
 		/* Set the transformation operation for the points. */
 		D2D::Point * operator * (Matrix * transf);
-};
 
-/**
- * The class used to print a 3D point.
- */
-class D3D::Point : public D2D::Point {
-    protected:
-        GLint z; /* The depth component of the point. */
-    public:
-        Point(GLint xx, GLint yy, GLint zz);
-
-        /* TODO Prints the 3D object. */
-        Point2DList * print();
+        /* Calculates the point between another two using a time parameter. */
+        static D2D::Point * tween(const D2D::Point p1, const D2D::Point p2, double time);
 };
 
 /**
  * The class used to print an arc.
  */
-class D2D::Arc : public D2D::Figure {
+class D2D::Arc : public D2D::StaticFigure {
     protected:
         D2D::Point center; /* The point associated to the center of the arc. */
         D2D::Point start;  /* The starting point of the arc. */
@@ -155,7 +155,7 @@ class D2D::Circle : public D2D::Arc {
 /**
  * The class used to print a segment.
  */
-class D2D::Segment : public D2D::Figure {
+class D2D::Segment : public D2D::StaticFigure {
     protected:
         D2D::Point start,  /* The starting point of the segment. */
                 end;    /* The ending point of the segment. */
@@ -169,7 +169,7 @@ class D2D::Segment : public D2D::Figure {
 /**
  * The class to draw polygons.
  */
-class D2D::Polygon : public D2D::Figure {
+class D2D::Polygon : public D2D::StaticFigure {
     protected:
         Point2DList pointList;  /* The list of points associated to the polygon. */
     public:
@@ -188,7 +188,7 @@ class D2D::Polygon : public D2D::Figure {
  *  x = xMod * cos(ang);
  *  y = yMod * sin(ang);
  */
-class D2D::EllArc : public D2D::Figure {
+class D2D::EllArc : public D2D::StaticFigure {
     protected:
         D2D::Point center, /* The center of the associated ellipse. */
                 start;  /* The starting point used to draw the ellipse. */
@@ -233,6 +233,34 @@ class D2D::RegPol : public D2D::Polygon {
 class D2D::Rectangle : public D2D::Polygon {
 	public:
 		Rectangle(D2D::Point p1, D2D::Point p2);
+};
+
+/**
+ * The class used to print a 3D point.
+ */
+class D3D::Point {
+    public:
+        /* These components are public in order to allow all the figures access them. */
+        GLint   x, /* The horizontal component of the point. */
+                y, /* The vertical component of the point. */
+                z; /* The depth component of the point. */
+
+        Point(GLint xx = 0, GLint yy = 0, GLint zz = 0);
+
+        /* Setting the assignator between two points. */
+        D3D::Point operator = (D3D::Point);
+
+        /* Calculates the distance between two points. */
+        static float distance(D3D::Point p1, D3D::Point p2);
+
+		/* Transforms the point locally. */
+		Point * transform(Figure * ptr);
+
+        /* Prints the figure. */
+        virtual Point3DList * print();
+
+		/* Set the transformation operation for the points. */
+		D3D::Point * operator * (Matrix * transf);
 };
 
 #endif

@@ -13,16 +13,23 @@ using namespace D3D;
  * @param   GLint   yy  The vertical component of the point.
  * @param   GLint   zz  The depth component of the point.
  */
-Point::Point(GLint xx, GLint yy, GLint zz) : D2D::Point(xx, yy)
+Point::Point(GLint xx, GLint yy, GLint zz)
 {
-    this->z = zz;
+    x = xx;
+    y = yy;
+    z = zz;
 }
 
-/* TODO 3D print. */
-Point2DList * 
+/**
+ */
+Point3DList * 
 Point::print()
 {
-	return NULL;
+    Point3DList * list = new Point3DList();
+
+    list->push_back(new Point(x, y, z));
+
+    return list;
 }
 
 
