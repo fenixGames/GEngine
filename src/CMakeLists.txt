@@ -11,6 +11,6 @@ elseif ( ${WITH_WAYLAND} )
 endif( ${WITH_GLUT} )
 
 add_definitions(-fPIC -Wall -Werror -g -DDEBUG)
-add_library(display OBJECT ${DISPLAY_OS} display2D.cpp)
+add_library(display OBJECT ${DISPLAY_OS} display.cpp)
 add_library(matrix	OBJECT matrix.cpp vector.cpp)
 add_library(geometry OBJECT geometry2D.cpp geometry3D.cpp)

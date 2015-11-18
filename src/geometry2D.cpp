@@ -1,13 +1,13 @@
 #include "geometry.h"
 #include <math.h>
 #include <GL/glut.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
 
 #define POINT_PREC  1800.0f /* 10 points per grad. */
 #define PI  M_PI
 
-using namespace D2D;
+using namespace GEngine::Geometry;
 
 /**
  * The constructor of Figure initializes the solid variable to false.
@@ -16,21 +16,22 @@ Figure::Figure()
 {
     solid = false;
 	mode = GL_LINES;
-	org[0] = org[1] = angle = 0;
+	org[0] = org[1] = 0;
     buffer = NULL;
 	memset(color, 0, sizeof(GLdouble) * 3);
+    memset(angle, 0, sizeof(GLfloat) * 3);
 }
 
 Figure::Figure(const Figure& fig)
 {
 	solid = fig.solid;
 	mode = fig.mode;
-	angle = fig.angle;
+    memcpy(angle, fig.angle, 3 * sizeof(GLfloat));
 	memcpy(org, fig.org, 2* sizeof(int));
 	memcpy(color, fig.color, 3 * sizeof(GLdouble));
 
     if (fig.buffer != NULL)
-        buffer = new Point2DList(*fig.buffer);
+        buffer = new PointList(*fig.buffer);
     else
         buffer = NULL;
 }
@@ -63,12 +64,16 @@ Figure::getMode()
 
 /**
  * Rotates a figure so many angles as defined.
- * @param	GLfloat	angle	The angle to rotate the figure.
+ * @param	GLfloat	yaw	    The angle for the yaw of the figure.
+ * @param	GLfloat	pitch   The angle for the pitch of the figure.
+ * @param	GLfloat	roll    The angle for the roll of the figure.
  */
 void
-Figure::rotate(GLfloat ang)
+Figure::rotate(GLfloat yaw, GLfloat pitch, GLfloat roll)
 {
-	angle = ang * M_PI / 180.0f;
+	angle[0] = yaw * M_PI / 180.0f;
+	angle[1] = pitch * M_PI / 180.0f;
+	angle[2] = roll * M_PI / 180.0f;
 }
 
 /**
@@ -116,7 +121,7 @@ Figure::operator = (const Figure& fig)
 {
 	solid = fig.solid;
 	mode = fig.mode;
-	angle = fig.angle;
+    memcpy(angle, fig.angle, 3 * sizeof(GLfloat));
 	memcpy(org, fig.org, 2 * sizeof(int));
 
 	return * this;
@@ -137,10 +142,11 @@ StaticFigure::motion(int __unused time)
  * @param   GLint   xx  The horizontal component of the point.
  * @param   GLint   yy  The vertical component of the point.
  */
-Point::Point(GLdouble xx, GLdouble yy)
+Point::Point(GLdouble xx, GLdouble yy, GLdouble zz)
 {
     x = xx;
     y = yy;
+    z = zz;
 }
 
 /**
@@ -151,15 +157,28 @@ Point::Point(GLdouble xx, GLdouble yy)
 Point *
 Point::transform(Figure * ptr)
 {
-	Point * end = new Point(* this);
-	GLint rx, ry;
+	Point * end;
+    GLfloat * angle = ptr->angle;
+    Vector in(3, x, y, z), out(3, 0.0, 0.0, 0.0);
+    /* The three rotational matrix, starting for roll. */
+    Matrix roll(3, 3, 
+            cos(angle[0]), -sin(angle[0]), 0.0, 
+            sin(angle[0]), cos(angle[0]), 0.0, 
+            0.0, 0.0, 1.0),
+           pitch(3, 3,
+                   cos(angle[1]), 0.0, sin(angle[1]),
+                   0.0, 1.0, 0.0,
+                   -sin(angle[1]), 0.0, cos(angle[1])),
+           yaw(3, 3,
+                   1.0, 0.0, 0.0,
+                   0.0, cos(angle[2]), -sin(angle[2]),
+                   0.0, sin(angle[2]), cos(angle[2])), rotation = Matrix::identity(3);
 
-	rx = end->x - ptr->org[0];
-	ry = end->y - ptr->org[1];
+    rotation = roll * pitch * yaw;
 
-	end->x = ptr->org[0] + (rx * cos(ptr->angle) - ry * sin(ptr->angle));
-	end->y = ptr->org[1] + (rx * sin(ptr->angle) + ry * cos(ptr->angle));
+    out = rotation * in;
 
+    end = new Point(out.getElement(0), out.getElement(1), out.getElement(2));
 	return end;
 }
 
@@ -247,7 +266,7 @@ Arc::Arc(Point c, Point s, GLfloat a)
     center.x = c.x; center.y = c.y;
     start.x = s.x; start.y = s.y;
     angle = a;
-
+ 
 	org[0] = c.x;
 	org[1] = c.y;
     /* The angle must be defined between 0 and 2 * PI, so we calculate the equivalent one. */
@@ -264,12 +283,12 @@ Arc::Arc(Point c, Point s, GLfloat a)
 /**
  * Prints the arc on the screen, after converting each point, of course.
  */
-Point2DList *
+PointList *
 Arc::print() {
     GLfloat ang_step = PI / POINT_PREC, ang;
     GLfloat rad = Point::distance(start, center);
     GLfloat vpx, vpy;
-    Point2DList * list = new Point2DList();
+    PointList * list = new PointList();
 
 	if (angle == 360.0f && solid)
 		mode = GL_POLYGON;
@@ -337,10 +356,10 @@ Sector::Sector(Point c, Point s, GLfloat a) : Arc(c, s, a)
 /**
  * Prints the sector on the screen.
  */
-Point2DList *
+PointList *
 Sector::print()
 {
-    Point2DList * list;
+    PointList * list;
 
 	if (solid)
 		mode = GL_POLYGON;
@@ -384,10 +403,10 @@ Segment::Segment(Point sp, Point ep)
 /**
  * Prints the segment on the screen.
  */
-Point2DList *
+PointList *
 Segment::print()
 {
-    Point2DList * list = new Point2DList();
+    PointList * list = new PointList();
 
     list->push_back(Point(start.x, start.y).transform(this));
     list->push_back(Point(end.x, end.y).transform(this));
@@ -400,9 +419,9 @@ Segment::print()
  *
  * @param   Point2DList list    The list of 2D points that makes the polygon.
  */
-Polygon::Polygon(Point2DList list)
+Polygon::Polygon(PointList list)
 {
-    Point2DList::iterator   iter;
+    PointList::iterator   iter;
 
     for (iter = list.begin(); iter != list.end(); iter++)
         pointList.push_back(*iter);
@@ -427,11 +446,11 @@ Polygon::Polygon(const Point ** list, int number)
 /**
  * Prints the polygon on the screen.
  */
-Point2DList *
+PointList *
 Polygon::print()
 {
-    Point2DList::iterator   iter;
-    Point2DList * list = new Point2DList();
+    PointList::iterator   iter;
+    PointList * list = new PointList();
     Point * point;
 
 	if (solid)
@@ -479,12 +498,12 @@ EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
 /**
  * Prints the ellipse on the screen.
  */
-Point2DList *
+PointList *
 EllArc::print()
 {
     GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
     GLfloat vpx, vpy;
-    Point2DList *list = new Point2DList();
+    PointList *list = new PointList();
 
 	if (angle == 360.0f && solid)
 		mode = GL_POLYGON;
@@ -590,3 +609,4 @@ Rectangle::Rectangle(Point p1, Point p2)
 	else
 		mode = GL_LINE_LOOP;
 }
+
