@@ -141,7 +141,9 @@ Vector::operator = (Vector vect)
 	if (elements != NULL)
 		delete elements;
 
-	elements = new std::vector<double>(*vect.elements);
+	elements = new std::vector<double>(nelem);
+    for (int idx = 0; idx < nelem; idx++)
+        (*elements)[idx] = vect.elements->at(idx);
 
 	return *this;
 }
@@ -163,9 +165,39 @@ Vector::getElement(unsigned int index)
 }
 
 /**
+ * Sets the element at the position index to value.
+ *
+ * @param   unsigned    index   The index of the element to set.
+ * @param   double      value   The new value of the element.
+ */
+void
+Vector::setElement(unsigned int index, double value)
+{
+    if (index > nelem)
+        return;
+
+    (*elements)[index] = value;
+}
+
+/**
  * Destructor of the class.
  */
 Vector::~Vector()
 {
 	delete elements;
 }
+
+#ifdef DEBUG
+/**
+ * Prints the vector on the screen.
+ */
+void
+Vector::print() {
+    printf("Vector %d\n[", nelem);
+
+    for(int idx = 0; idx < nelem; idx++)
+        printf(" %f,", elements->at(idx));
+    printf("\b ]\n"); 
+}
+#endif
+

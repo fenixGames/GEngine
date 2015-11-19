@@ -22,6 +22,7 @@ namespace GEngine {
 
 /**
  * The class associated to the display engine whose in charge of printing everything on the screen.
+ * The user should think in the display as the camera of the Engine.
  */
 class GEngine::Display {
 	private:
@@ -41,6 +42,9 @@ class GEngine::Display {
 
         /* Transformation matrix. */
 		Matrix	* trans;
+#ifdef DEBUG
+        Matrix  * axis;
+#endif
 
         /* The function to draw the screen. */
         static void displayFunc();
@@ -67,9 +71,6 @@ class GEngine::Display {
 
         /* Translates the whole display in a 2D or 3D environment. */
         void translate(Geometry::Point * point);
-
-		/* Bends the display. TODO 3D */
-		/*void bend(GLfloat angle);*/
 
         /* Adds a figure to be drawn to the list of objects to draw. */
         void addFigure(Geometry::Figure * figure);

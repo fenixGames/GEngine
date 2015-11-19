@@ -29,7 +29,7 @@ printFigures(FigureList * list, int winId, Matrix *trans)
     PointList::iterator   pointIter;
     FigureList::iterator  iter;
 	Vector				 	out(4, 0, 0, 0, 0);
-	double					vpx, vpy, vpz;
+	double					vpx, vpy, vpz, xproj, yproj;
 
     /* If the list is NULL we should draw nothing. */
     if (list == NULL)
@@ -46,8 +46,16 @@ printFigures(FigureList * list, int winId, Matrix *trans)
 			vpy = (*pointIter)->y;
             vpz = (*pointIter)->z;
 
+            // TODO
+            xproj = screen[2] * sin(atan(vpx / vpz));
+            yproj = screen[2] * sin(atan(vpy / vpz));
+
 			out = (* trans) * Vector(4, vpx, vpy, vpz, 1.0);
 
+#ifdef DEBUG
+            printf( "In = [ %f, %f, %f ]\n", vpx, vpy, vpz);
+            out.print();
+#endif
 			/* Printing the points. */
 			glVertex3d(out.getElement(0), out.getElement(1), out.getElement(2));
         }
@@ -108,6 +116,12 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
 
 		theDisplay = this;
 	}
+#ifdef DEBUG
+    axis = new Matrix(3, 3, 
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0);
+#endif
 }
 
 /**
@@ -143,16 +157,40 @@ Display::displayFunc()
 
     /* Setting the Basic axis to debug the engine's printing. */
 #ifdef DEBUG
+    Vector out(3, 0.0, 0.0, 0.0), in(3, -1.5, 0.0, 0.0);
+    Matrix * axis = theDisplay->axis;
+
 	glPushAttrib(GL_ENABLE_BIT);
 	glEnable(GL_LINE_STIPPLE);
 	glLineStipple(1, 0xF0F0);
 	glBegin(GL_LINES);
-    glVertex3f(-1.0f, 0.0f, 0.0f);
-    glVertex3f(1.0f, 0.0f, 0.0f);
-    glVertex3f(0.0f, 1.0f, 0.0f);
-    glVertex3f(0.0f, -1.0f, 0.0f);
-    glVertex3d(0.0f, 0.0f, -1.0f);
-    glVertex3d(0.0f, 0.0f, 1.0f);
+    
+    /* X Axis in red. */
+    glColor3d(1.0, 0.0, 0.0);
+    out = (*axis) * in;
+    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
+    in.setElement(0, 1.5); 
+    out = (*axis) * in;
+    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
+
+    /* Y axis in green. */
+    glColor3d(0.0, 1.0, 0.0);
+    in.setElement(1, -1.5); in.setElement(0, 0.0);
+    out = (*axis) * in;
+    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
+    in.setElement(1, 1.5);
+    out = (*axis) * in;
+    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
+
+    /* Z axis in blue. */
+    glColor3d(0.0, 0.0, 1.0);
+    in.setElement(2, -1.5); in.setElement(1, 0.0);
+    out = (*axis) * in;
+    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
+    in.setElement(2, 1.5);
+    out = (*axis) * in;
+
+    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
     glEnd();
 
 	glPopAttrib();
@@ -223,7 +261,8 @@ Display::setTitle(const char * _title)
 }
 
 /**
- * Rotate the whole display the angle indicated in the argument.
+ * Rotate the whole display the angle indicated in the argument using the Z axis
+ * as the central axis for rotation.
  *
  * @param	GLfloat	angle	The angle to rotate the display.
  */
@@ -242,6 +281,7 @@ Display::roll(GLfloat angle) {
 	Matrix rot(4, 4,
             cos(angle), -sin(angle), 0.0, 0.0,
             sin(angle), cos(angle), 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0), * old;
 
 	if (trans != NULL) {
@@ -249,6 +289,98 @@ Display::roll(GLfloat angle) {
 		/* Transforming the existent matrix. */
 		(* trans) = (* old) * rot;
 	}
+
+#ifdef DEBUG
+    Matrix mat(3, 3, 
+            cos(angle), -sin(angle), 0.0,
+            sin(angle), cos(angle), 0.0,
+            0.0, 0.0, 1.0);
+
+    old = axis;
+    (*axis) = (*old) * mat;
+#endif
+}
+
+/**
+ * Rotate the whole display the angle indicated in the argument using the X axis
+ * as the central axis for rotation.
+ *
+ * @param	GLfloat	angle	The angle to rotate the display.
+ */
+void
+Display::yaw(GLfloat angle) {
+	/* Normalizing the angle (0 <= angle <= 360). */
+	while (angle > 360.0f)
+		angle -= 360.0f;
+
+	while (angle < 0.0f)
+		angle += 360.0f;
+
+	angle *= M_PI / 180.0f;
+
+	/* Declaring the rotational matrix. */
+	Matrix rot(4, 4,
+            1.0, 0.0, 0.0, 0.0,
+            0.0, cos(angle), -sin(angle), 0.0,
+            0.0, sin(angle), cos(angle), 0.0,
+            0.0, 0.0, 0.0, 1.0), * old;
+
+	if (trans != NULL) {
+		old = trans;
+		/* Transforming the existent matrix. */
+		(* trans) = (* old) * rot;
+	}
+
+#ifdef DEBUG
+    Matrix mat(3, 3, 
+            1.0, 0.0, 0.0,
+            0.0, cos(angle), -sin(angle),
+            0.0, sin(angle), cos(angle));
+
+    old = axis;
+    (*axis) = (*old) * mat;
+#endif
+}
+
+/**
+ * Rotate the whole display the angle indicated in the argument using the Y axis
+ * as the central axis for rotation.
+ *
+ * @param	GLfloat	angle	The angle to rotate the display.
+ */
+void
+Display::pitch(GLfloat angle) {
+	/* Normalizing the angle (0 <= angle <= 360). */
+	while (angle > 360.0f)
+		angle -= 360.0f;
+
+	while (angle < 0.0f)
+		angle += 360.0f;
+
+	angle *= M_PI / 180.0f;
+
+	/* Declaring the rotational matrix. */
+	Matrix rot(4, 4,
+            cos(angle), 0.0, -sin(angle),   0.0,
+            0.0,        1.0, 0.0,           0.0,
+            sin(angle), 0.0,  cos(angle),   0.0,
+            0.0,        0.0, 0.0,           1.0), * old;
+
+	if (trans != NULL) {
+		old = trans;
+		/* Transforming the existent matrix. */
+		(* trans) = (* old) * rot;
+	}
+
+#ifdef DEBUG
+    Matrix mat(3, 3, 
+            cos(angle), 0.0, -sin(angle),
+            0.0,        1.0, 0.0,
+            sin(angle), 0.0,  cos(angle));
+
+    old = axis;
+    (*axis) = (*old) * mat;
+#endif
 }
 
 /**
@@ -259,25 +391,17 @@ Display::roll(GLfloat angle) {
 void
 Display::translate(Point  *point)
 {
-    double  x11, x12, y11, y12, z11, z12;
-    x11 = (2.0 * point->x) / (screen[0] - 1.0);
-    x12 = point->x;
-    y11 = (2.0 * point->y) / (screen[1] - 1.0);
-    y12 = point->y;
-
-    if (screen[2] > 0)
-        z11 = (2.0 * point->z) / (screen[2] - 1.0 );
-    else
-        z11 = 0;
-    z12 = point->z;
-    
     Matrix  translate(4, 4,
-            x11, 0.0, 0.0, x12,
-            0.0, y11, 0.0, y12,
-            0.0, 0.0, z11, z12, /* Leave the Z axis the same. */
+            1.0, 0.0, 0.0, - point->x,
+            0.0, 1.0, 0.0, - point->y,
+            0.0, 0.0, 1.0, - point->z, /* Leave the Z axis the same. */
             0.0, 0.0, 0.0, 1.0);/* The constant component should be left the same. */
 
     * trans = (*trans) * translate;
+#ifdef DEBUG
+    printf("screen[2] = %d\n", screen[2]);
+    trans->print();
+#endif
 }
 
 /**

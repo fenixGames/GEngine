@@ -193,6 +193,7 @@ Point::operator = (Point point)
 {
     x = point.x;
     y = point.y;
+    z = point.z;
 
     return *this;
 }
@@ -222,7 +223,7 @@ Point::distance(Point p1, Point p2)
  * @param	Matrix	transf	The transformation matrix.
  * @return	The transformated point.
  */
-Point *
+/*Point *
 Point::operator * (Matrix * transf)
 {
 	Vector in(3, (double) x, (double) y, 1.0), 
@@ -231,7 +232,7 @@ Point::operator * (Matrix * transf)
 	out = (* transf) * in;
 
 	return new Point(out.getElement(0), out.getElement(1));
-}
+}*/
 
 /**
  * Calculates the point between two other points using the time as a parameter.
@@ -247,12 +248,13 @@ Point::operator * (Matrix * transf)
 Point *
 Point::tween(const Point p1, const Point p2, double time)
 {
-    int xcalc, ycalc;
+    int xcalc, ycalc, zcalc;
 
     xcalc = (1.0 - time) * p1.x + time * p2.x;
     ycalc = (1.0 - time) * p1.y + time * p2.y;
+    zcalc = (1.0 - time) * p1.z + time * p2.z;
 
-    return new Point(xcalc, ycalc);
+    return new Point(xcalc, ycalc, zcalc);
 }
 
 /**
@@ -285,7 +287,7 @@ Arc::Arc(Point c, Point s, GLfloat a)
  */
 PointList *
 Arc::print() {
-    GLfloat ang_step = PI / POINT_PREC, ang;
+    GLfloat ang_step = PI / POINT_PREC, ang, end_angle;
     GLfloat rad = Point::distance(start, center);
     GLfloat vpx, vpy;
     PointList * list = new PointList();
@@ -301,12 +303,13 @@ Arc::print() {
     else
         ang = 3 * PI / 2;
 
+    end_angle = (angle * M_PI / 180.0f) + ang ;
     /* Calculating and printing the required points. */
-    while (ang < angle * PI / 180.0f) {
+    while (ang < end_angle) {
         vpx = rad * cos(ang) + center.x;
         vpy = rad * sin(ang) + center.y;
 
-	   	list->push_back(Point(vpx, vpy).transform(this));
+	   	list->push_back(Point(vpx, vpy, center.z).transform(this));
         ang += ang_step;
     }
     return list;
@@ -340,7 +343,7 @@ Arc::getEnd()
     x = center.x + radius * cos(sangle + (angle * PI / 180.0f));
     y = center.y + radius * sin(sangle + (angle * PI / 180.0f));
 
-    end = new Point(x, y);
+    end = new Point(x, y, center.z);
 
     return end;
 }
@@ -368,7 +371,7 @@ Sector::print()
     Arc   arc(center,  start, angle);
 
     list = arc.print();
-    list->push_front(Point(center.x, center.y).transform(this));
+    list->push_front(Point(center.x, center.y, center.z).transform(this));
 
     return list;
 }
@@ -408,8 +411,8 @@ Segment::print()
 {
     PointList * list = new PointList();
 
-    list->push_back(Point(start.x, start.y).transform(this));
-    list->push_back(Point(end.x, end.y).transform(this));
+    list->push_back(Point(start.x, start.y, start.z).transform(this));
+    list->push_back(Point(end.x, end.y, end.z).transform(this));
 
     return list;
 }
@@ -460,7 +463,7 @@ Polygon::print()
     for (iter = pointList.begin(); iter != pointList.end(); iter++) {
         point = *iter;
 
-        list->push_back(Point(point->x, point->y).transform(this));
+        list->push_back(Point(point->x, point->y, point->z).transform(this));
     }
 
     return list;
@@ -515,14 +518,14 @@ EllArc::print()
         ang = PI / 2.0f;
     else
         ang = 1.5f * PI;
-	end_ang = angle * PI / 180.0f;
+	end_ang = angle * PI / 180.0f + ang;
 
     /* Calculating the points and printing them. */
     while (ang < end_ang) {
         vpx = xMod * cos(ang) + center.x;
         vpy = yMod * sin(ang) + center.y;
 
-        list->push_back(Point(vpx, vpy).transform(this));
+        list->push_back(Point(vpx, vpy, center.z).transform(this));
         ang += ang_step;
     }
 
@@ -552,7 +555,7 @@ EllArc::getEnd()
 	xcomp = xMod * cos( sangle + (angle * PI / 180.0f)) + center.x;
 	ycomp = yMod * sin( sangle + (angle * PI / 180.0f)) + center.y;
 
-	return new Point(xcomp, ycomp);
+	return new Point(xcomp, ycomp, center.z);
 }
 
 /**

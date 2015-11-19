@@ -109,7 +109,7 @@ class GEngine::Geometry::Point  {
         Point * transform(Figure * ptr);
 
 		/* Set the transformation operation for the points. */
-		Point * operator * (Matrix * transf);
+		//Point * operator * (Matrix * transf);
 
         /* Calculates the point between another two using a time parameter. */
         static Point * tween(const Point p1, const Point p2, double time);
