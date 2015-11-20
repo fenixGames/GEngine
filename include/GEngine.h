@@ -3,6 +3,7 @@
 
 namespace GEngine {
 	class Display;
+    struct camera;
     namespace Geometry {
         class Figure;
         class StaticFigure;
@@ -16,6 +17,7 @@ namespace GEngine {
         class Ellipse;
         class RegPol;
         class Rectangle;
+        class Polyhedra;
     };
 
 }

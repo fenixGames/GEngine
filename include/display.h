@@ -15,10 +15,22 @@
 #ifndef _GENGINE_H
 namespace GEngine {
     class Display;
+    struct camera;
 }
 #endif
 
 #define FigureList      std::list<GEngine::Geometry::Figure *>
+
+/**
+ * The structure to define how the camera should be implemented.
+ */
+struct GEngine::camera {
+    GLfloat yaw;            /* The angle to control the yaw of the camera. */
+    GLfloat pitch;          /* The angle to control the pitch of the camera. */
+    GLfloat roll;           /* The angle to control the roll of the camera. */
+    GLint  position[3];    /* The position of the camera. */
+    GLuint  screen[3];      /* The size of the projected screen. */
+};
 
 /**
  * The class associated to the display engine whose in charge of printing everything on the screen.
@@ -35,16 +47,12 @@ class GEngine::Display {
         GLfloat fgcolor[3]; /* The color of the foreground. */
         char    *title;     /* The title of the window associated to this display. */
 
-        static Display *theDisplay; /* The main screen display. */
+        static Display  *theDisplay; /* The main screen display. */
         int mainWin;    /* The identifier of the main Window. */
 
-        FigureList      * figures;
+        FigureList      * figures;  /* The list of figures of the display. */
 
-        /* Transformation matrix. */
-		Matrix	* trans;
-#ifdef DEBUG
-        Matrix  * axis;
-#endif
+        struct camera   displayCam; /* The camera of the display. */
 
         /* The function to draw the screen. */
         static void displayFunc();
@@ -70,7 +78,7 @@ class GEngine::Display {
         void pitch(GLfloat angle);
 
         /* Translates the whole display in a 2D or 3D environment. */
-        void translate(Geometry::Point * point);
+        void translate(Geometry::Point point);
 
         /* Adds a figure to be drawn to the list of objects to draw. */
         void addFigure(Geometry::Figure * figure);

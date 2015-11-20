@@ -31,6 +31,7 @@ namespace GEngine {
         class Ellipse;
         class RegPol;
         class Rectangle;
+        class Polyhedra;
     };
 };
 #endif
@@ -60,6 +61,9 @@ class GEngine::Geometry::Figure {
 
         /* By default, all the figures are wired figures, with this, they will be solid. */
         void setSolid();
+
+        /* Returns whether the figure is solid or not. */
+        bool getSolid();
 
         /* Rotates the figure the angle declared in degrees for the yaw, pitch and roll angles. */
         void rotate(GLfloat yaw, GLfloat pitch = 0, GLfloat roll = 0);
@@ -236,5 +240,33 @@ class GEngine::Geometry::Rectangle : public GEngine::Geometry::Polygon {
 	public:
         Rectangle(Point p1, Point p2);
 };
+
+/**
+ * Defining a polyhedra.
+ */
+class GEngine::Geometry::Polyhedra : public GEngine::Geometry::StaticFigure {
+    protected:
+        PointList   * pointList;
+    public:
+        Polyhedra(PointList list);
+        Polyhedra(Point ** list = NULL, unsigned int npoints = 0);
+
+        /* Prints the polyhedra on the screen. */
+        virtual PointList * print();
+};
+
+/** TODO 3D Figures:
+ *  `- Prisms.
+ *  `- Regular polyhedra. 
+ *    (Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron)
+ *  `- Pyramids.
+ *  - Spherical plane.
+ *  `- Spheres.
+ *  - Ellipsoid.
+ *  `- Ellipsoidal plane.
+ *  - Cilinders.
+ *  - Cones.
+ *  - Toroid.
+ */
 #endif
 

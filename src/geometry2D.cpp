@@ -52,6 +52,15 @@ Figure::setSolid()
 }
 
 /**
+ * Returns the solid argument of the figure.
+ */
+bool
+Figure::getSolid()
+{
+    return solid;
+}
+
+/**
  * Gets the mode to use to print the figure.
  *
  * @return The mode to use.
@@ -207,15 +216,17 @@ Point::operator = (Point point)
 float
 Point::distance(Point p1, Point p2)
 {
-    float xcomp, ycomp;
+    float xcomp, ycomp, zcomp;
 
     xcomp = (p1.x - p2.x);
     ycomp = (p1.y - p2.y);
+    zcomp = (p1.z - p2.z);
 
     xcomp *= xcomp;
     ycomp *= ycomp;
+    zcomp *= zcomp;
 
-    return sqrt(xcomp + ycomp);
+    return sqrt(xcomp + ycomp + zcomp);
 }
 
 /**
@@ -279,7 +290,7 @@ Arc::Arc(Point c, Point s, GLfloat a)
         angle += 360.0f;
 
 	if (angle == 360.0f)
-		mode = GL_LINE_LOOP;
+		mode = GL_POLYGON;
 }
 
 /**
@@ -291,9 +302,6 @@ Arc::print() {
     GLfloat rad = Point::distance(start, center);
     GLfloat vpx, vpy;
     PointList * list = new PointList();
-
-	if (angle == 360.0f && solid)
-		mode = GL_POLYGON;
 
     /* Calculating the initial angle. */
     if (start.x != 0)
@@ -353,7 +361,7 @@ Arc::getEnd()
  */
 Sector::Sector(Point c, Point s, GLfloat a) : Arc(c, s, a)
 {
-	mode = GL_LINE_LOOP;
+	mode = GL_POLYGON;
 }
 
 /**
@@ -363,9 +371,6 @@ PointList *
 Sector::print()
 {
     PointList * list;
-
-	if (solid)
-		mode = GL_POLYGON;
 
     /* Making the arc for the sector. */
     Arc   arc(center,  start, angle);
@@ -382,10 +387,7 @@ Sector::print()
  */
 Circle::Circle(Point c, GLint radius) : Arc(c, Point(c.x + radius, c.y), 360.0f)
 {
-    if (solid)
-    	mode = GL_POLYGON;
-    else
-        mode = GL_LINE_LOOP;
+    mode = GL_POLYGON;
 }
 
 /**
@@ -428,7 +430,7 @@ Polygon::Polygon(PointList list)
 
     for (iter = list.begin(); iter != list.end(); iter++)
         pointList.push_back(*iter);
-	mode = GL_LINE_LOOP;
+	mode = GL_POLYGON;
 }
 
 /**
@@ -443,7 +445,7 @@ Polygon::Polygon(const Point ** list, int number)
 
     for (idx = 0; idx < number; idx++)
         pointList.push_back((Point *)list[idx]);
-	mode = GL_LINE_LOOP;
+	mode = GL_POLYGON;
 }
 
 /**
@@ -455,9 +457,6 @@ Polygon::print()
     PointList::iterator   iter;
     PointList * list = new PointList();
     Point * point;
-
-	if (solid)
-		mode = GL_POLYGON;
 
     /* Calculating the normalized points of the polygon in order to print it. */
     for (iter = pointList.begin(); iter != pointList.end(); iter++) {
@@ -495,7 +494,7 @@ EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
         angle += 360.0f;
 
 	if (angle == 360.0f)
-		mode = GL_LINE_LOOP;
+		mode = GL_POLYGON;
 }
 
 /**
@@ -507,9 +506,6 @@ EllArc::print()
     GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
     GLfloat vpx, vpy;
     PointList *list = new PointList();
-
-	if (angle == 360.0f && solid)
-		mode = GL_POLYGON;
 
     /* Calculating the initial angle. */
     if (start.x != 0)
@@ -591,7 +587,7 @@ RegPol::RegPol(Point center, unsigned int sides, GLint rad)
 					)
 				);
 	}
-	mode = GL_LINE_LOOP;
+	mode = GL_POLYGON;
 }
 
 /**
@@ -605,11 +601,6 @@ Rectangle::Rectangle(Point p1, Point p2)
 	pointList.push_back(new Point(p1.x, p1.y));
 	pointList.push_back(new Point(p1.x, p2.y));
 	pointList.push_back(new Point(p2.x, p2.y));
-	pointList.push_back(new Point(p2.x, p1.y));
-	
-	if (solid)
-		mode = GL_POLYGON;
-	else
-		mode = GL_LINE_LOOP;
+	pointList.push_back(new Point(p2.x, p1.y));	
 }
 

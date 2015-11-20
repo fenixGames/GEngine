@@ -6,7 +6,7 @@ using namespace GEngine;
 Display *Display::theDisplay = NULL;
 
 /* Declaring the external static funstions to draw the 2D and 3D figures. */
-extern int printFigures(FigureList * list, int winId, Matrix * trans);
+extern int printFigures(FigureList * list, int winId, struct camera cam);
 
 /**
  * Wrapper for the GLUT dependent initialization of the screen.
@@ -54,10 +54,6 @@ Display::print()
 
     /* Setting the function to redraw everything. */
     glutDisplayFunc(&Display::displayFunc);
-
-#ifdef DEBUG
-    trans->print();
-#endif
 
 	/* Main loop should be on the GEngine class when finished. */
 	glutMainLoop();

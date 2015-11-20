@@ -23,21 +23,87 @@ using namespace GEngine::Geometry;
  * @return Returns 0 on success or the error code on failure.
  */
 int 
-printFigures(FigureList * list, int winId, Matrix *trans)
+printFigures(FigureList * list, int winId, struct camera cam)
 {
-    PointList             * pointList;
-    PointList::iterator   pointIter;
-    FigureList::iterator  iter;
+    PointList               * pointList;
+    PointList::iterator     pointIter;
+    FigureList::iterator    iter;
+    Matrix                  tr, rotx, roty, rotz, proj, transf, total;
+#ifdef DEBUG
+    Matrix                  axis(4, 6, 
+                                -1.0, 1.0,  0.0, 0.0,  0.0, 0.0,
+                                 0.0, 0.0, -1.0, 1.0,  0.0, 0.0,
+                                 0.0, 0.0,  0.0, 0.0, -1.0, 1.0,
+                                 0.0, 0.0,  0.0, 0.0,  0.0, 0.0), result;
+#endif
 	Vector				 	out(4, 0, 0, 0, 0);
-	double					vpx, vpy, vpz, xproj, yproj;
+	double					vpx, vpy, vpz, dist;
 
     /* If the list is NULL we should draw nothing. */
     if (list == NULL)
         return 0;
 
+    /* Create the translation and rotation matrices. */
+    tr = Matrix(4, 4, 
+            1.0, 0.0, 0.0, (double) - cam.position[0],
+            0.0, 1.0, 0.0, (double) - cam.position[1],
+            0.0, 0.0, 1.0, (double) - cam.position[2],
+            0.0, 0.0, 0.0, 1.0);
+    rotx = Matrix(4, 4,
+            1.0, 0.0,           0.0,            0.0,
+            0.0, cos(cam.yaw),  -sin(cam.yaw),  0.0,
+            0.0, sin(cam.yaw),  cos(cam.yaw),   0.0,
+            0.0, 0.0,           0.0,            1.0);
+    roty = Matrix(4, 4,
+            cos(cam.pitch), 0.0, -sin(cam.pitch),   0.0,
+            0.0,            1.0, 0.0,               0.0,
+            sin(cam.pitch), 0.0, cos(cam.pitch),    0.0,
+            0.0,            0.0, 0.0,               1.0);
+    rotz = Matrix(4, 4,
+            cos(cam.roll),  -sin(cam.roll), 0.0,    0.0,
+            sin(cam.roll),  cos(cam.roll),  0.0,    0.0,
+            0.0,            0.0,            1.0,    0.0,
+            0.0,            0.0,            0.0,    1.0);
+    vpx = 2.0 / (cam.screen[0] - 1.0);
+    vpy = 2.0 / (cam.screen[1] - 1.0);
+    vpz = 2.0 / (cam.screen[2] - 1.0);
+    transf = Matrix(4, 4,
+            vpx,    0.0,    0.0,    0.0,
+            0.0,    vpy,    0.0,    0.0,
+            0.0,    0.0,    vpz,    0.0,
+            0.0,    0.0,    0.0,    1.0);
+
+    total = transf * rotx * roty * rotz * tr;
+#ifdef DEBUG
+    result = rotx * roty * rotz * axis;
+/*    result.print();
+    tr.print();
+    total.print();*/
+
+    glViewport( 5, cam.screen[1] - 55, 50, 50 );
+    glBegin(GL_LINES);
+    glColor3d( 1.0, 0.0, 0.0);
+    glVertex3d(result.getElement(0, 0), result.getElement(1, 0), result.getElement(2, 0));
+    glVertex3d(result.getElement(0, 1), result.getElement(1, 1), result.getElement(2, 1));
+    
+    glColor3d(0.0, 1.0, 0.0);
+    glVertex3d(result.getElement(0, 2), result.getElement(1, 2), result.getElement(2, 2));
+    glVertex3d(result.getElement(0, 3), result.getElement(1, 3), result.getElement(2, 3));
+    
+    glColor3d(0.0, 0.0, 1.0);
+    glVertex3d(result.getElement(0, 4), result.getElement(1, 4), result.getElement(2, 4));
+    glVertex3d(result.getElement(0, 5), result.getElement(1, 5), result.getElement(2, 5));
+    glEnd();
+    glViewport( 0, 0, cam.screen[0], cam.screen[1] );
+#endif
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
         pointList = (*iter)->print();
+        if ((*iter)->getSolid())
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 		glColor3d((*iter)->getRed(), (*iter)->getGreen(), (*iter)->getBlue());
 		glBegin((*iter)->getMode());
         for (pointIter = pointList->begin(); pointIter != pointList->end(); pointIter++) {
@@ -46,18 +112,16 @@ printFigures(FigureList * list, int winId, Matrix *trans)
 			vpy = (*pointIter)->y;
             vpz = (*pointIter)->z;
 
-            // TODO
-            xproj = screen[2] * sin(atan(vpx / vpz));
-            yproj = screen[2] * sin(atan(vpy / vpz));
+			out = total * Vector(4, vpx, vpy, vpz, 1.0);
 
-			out = (* trans) * Vector(4, vpx, vpy, vpz, 1.0);
+            /* Getting the distance to the camera. */
+            vpx = (double) out.getElement(0);
+            vpy = (double) out.getElement(1);
+            vpz = (double) out.getElement(2);
+            dist = sqrt(vpx * vpx + vpy * vpy + vpz * vpz);
 
-#ifdef DEBUG
-            printf( "In = [ %f, %f, %f ]\n", vpx, vpy, vpz);
-            out.print();
-#endif
 			/* Printing the points. */
-			glVertex3d(out.getElement(0), out.getElement(1), out.getElement(2));
+			glVertex4d(out.getElement(0), out.getElement(1), out.getElement(2), dist);
         }
 		glEnd();
     }
@@ -104,11 +168,8 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
 	ax = 2.0 / (screen[0] - 1.0); /* Setting the X modifier. */
 	ay = 2.0 / (screen[1] - 1.0); /* Setting the Y modifier. */
     az = (screen[2] > 0 ? 2.0 / (screen[2] - 1.0) : 0); /* Setting the Z modifier. */
-	trans = new Matrix(4, 4,
-            ax, 0.0, 0.0, -1.0,
-            0.0, ay, 0.0, -1.0,
-            0.0, 0.0, az, -1.0,
-            0.0, 0.0, 0.0, 1.0);
+    memset(&displayCam, 0, sizeof(struct camera));
+    memcpy(&displayCam.screen, screen, sizeof(GLuint) * 3);
 
 	if (theDisplay == NULL) {
 		/* OS initialization. */
@@ -116,12 +177,6 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
 
 		theDisplay = this;
 	}
-#ifdef DEBUG
-    axis = new Matrix(3, 3, 
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0);
-#endif
 }
 
 /**
@@ -156,50 +211,10 @@ Display::displayFunc()
             Display::theDisplay->fgcolor[1], Display::theDisplay->fgcolor[2]);
 
     /* Setting the Basic axis to debug the engine's printing. */
-#ifdef DEBUG
-    Vector out(3, 0.0, 0.0, 0.0), in(3, -1.5, 0.0, 0.0);
-    Matrix * axis = theDisplay->axis;
-
-	glPushAttrib(GL_ENABLE_BIT);
-	glEnable(GL_LINE_STIPPLE);
-	glLineStipple(1, 0xF0F0);
-	glBegin(GL_LINES);
-    
-    /* X Axis in red. */
-    glColor3d(1.0, 0.0, 0.0);
-    out = (*axis) * in;
-    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
-    in.setElement(0, 1.5); 
-    out = (*axis) * in;
-    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
-
-    /* Y axis in green. */
-    glColor3d(0.0, 1.0, 0.0);
-    in.setElement(1, -1.5); in.setElement(0, 0.0);
-    out = (*axis) * in;
-    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
-    in.setElement(1, 1.5);
-    out = (*axis) * in;
-    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
-
-    /* Z axis in blue. */
-    glColor3d(0.0, 0.0, 1.0);
-    in.setElement(2, -1.5); in.setElement(1, 0.0);
-    out = (*axis) * in;
-    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
-    in.setElement(2, 1.5);
-    out = (*axis) * in;
-
-    glVertex3f(out.getElement(0), out.getElement(1), out.getElement(2));
-    glEnd();
-
-	glPopAttrib();
-#endif
-
     glPointSize(4.0f);
     
     /* Prints the figures of the list. */
-    printFigures(list, Display::theDisplay->mainWin, Display::theDisplay->trans);
+    printFigures(list, Display::theDisplay->mainWin, Display::theDisplay->displayCam);
 
     /* Swaps the buffers so the printing will be visible. */
     SwapBuffers();
@@ -277,28 +292,8 @@ Display::roll(GLfloat angle) {
 
 	angle *= M_PI / 180.0f;
 
-	/* Declaring the rotational matrix. */
-	Matrix rot(4, 4,
-            cos(angle), -sin(angle), 0.0, 0.0,
-            sin(angle), cos(angle), 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0), * old;
-
-	if (trans != NULL) {
-		old = trans;
-		/* Transforming the existent matrix. */
-		(* trans) = (* old) * rot;
-	}
-
-#ifdef DEBUG
-    Matrix mat(3, 3, 
-            cos(angle), -sin(angle), 0.0,
-            sin(angle), cos(angle), 0.0,
-            0.0, 0.0, 1.0);
-
-    old = axis;
-    (*axis) = (*old) * mat;
-#endif
+    /* Setting the angle. */
+    displayCam.roll = angle;
 }
 
 /**
@@ -318,28 +313,8 @@ Display::yaw(GLfloat angle) {
 
 	angle *= M_PI / 180.0f;
 
-	/* Declaring the rotational matrix. */
-	Matrix rot(4, 4,
-            1.0, 0.0, 0.0, 0.0,
-            0.0, cos(angle), -sin(angle), 0.0,
-            0.0, sin(angle), cos(angle), 0.0,
-            0.0, 0.0, 0.0, 1.0), * old;
-
-	if (trans != NULL) {
-		old = trans;
-		/* Transforming the existent matrix. */
-		(* trans) = (* old) * rot;
-	}
-
-#ifdef DEBUG
-    Matrix mat(3, 3, 
-            1.0, 0.0, 0.0,
-            0.0, cos(angle), -sin(angle),
-            0.0, sin(angle), cos(angle));
-
-    old = axis;
-    (*axis) = (*old) * mat;
-#endif
+    /* Setting the angle. */
+    displayCam.yaw = angle;
 }
 
 /**
@@ -359,28 +334,8 @@ Display::pitch(GLfloat angle) {
 
 	angle *= M_PI / 180.0f;
 
-	/* Declaring the rotational matrix. */
-	Matrix rot(4, 4,
-            cos(angle), 0.0, -sin(angle),   0.0,
-            0.0,        1.0, 0.0,           0.0,
-            sin(angle), 0.0,  cos(angle),   0.0,
-            0.0,        0.0, 0.0,           1.0), * old;
-
-	if (trans != NULL) {
-		old = trans;
-		/* Transforming the existent matrix. */
-		(* trans) = (* old) * rot;
-	}
-
-#ifdef DEBUG
-    Matrix mat(3, 3, 
-            cos(angle), 0.0, -sin(angle),
-            0.0,        1.0, 0.0,
-            sin(angle), 0.0,  cos(angle));
-
-    old = axis;
-    (*axis) = (*old) * mat;
-#endif
+    /* Setting the angle. */
+    displayCam.pitch = angle;
 }
 
 /**
@@ -389,19 +344,11 @@ Display::pitch(GLfloat angle) {
  * @param   Point   point   The new origin of coordinates.
  */
 void
-Display::translate(Point  *point)
+Display::translate(Point point)
 {
-    Matrix  translate(4, 4,
-            1.0, 0.0, 0.0, - point->x,
-            0.0, 1.0, 0.0, - point->y,
-            0.0, 0.0, 1.0, - point->z, /* Leave the Z axis the same. */
-            0.0, 0.0, 0.0, 1.0);/* The constant component should be left the same. */
-
-    * trans = (*trans) * translate;
-#ifdef DEBUG
-    printf("screen[2] = %d\n", screen[2]);
-    trans->print();
-#endif
+    displayCam.position[0] = (GLint) point.x;
+    displayCam.position[1] = (GLint) point.y;
+    displayCam.position[2] = (GLint) point.z;
 }
 
 /**
