@@ -188,6 +188,7 @@ Matrix::operator * (double value)
 
     result.nrows        = nrows;
     result.ncolumns     = ncolumns;
+	result.matrix		= new std::vector<double>(result.nrows * result.ncolumns);
 
     /* Calculating the elements of the matrix. */
     for (idx = 0; idx < nrows; idx++)
@@ -269,6 +270,7 @@ Matrix::transponse()
 
     trans.nrows     = ncolumns;
     trans.ncolumns  = nrows;
+	trans.matrix	 = new std::vector<double>(trans.nrows * trans.ncolumns);
 
     /* Setting the elements. */
     for (idx = 0; idx < trans.nrows; idx++)
@@ -297,6 +299,8 @@ Matrix::getAdjoint(unsigned int row, unsigned int col) const
 
     adj.nrows       = nrows - 1;
     adj.ncolumns    = ncolumns - 1;
+
+	adj.matrix = new std::vector<double>(adj.nrows * adj.ncolumns);
     /* Getting the adjoint matrix. */
     for (idx = 0, ida = 0; idx < nrows; idx++) {
         for (idy = 0; idy < ncolumns; idy++) {
@@ -350,16 +354,17 @@ Matrix::determinant() const
 Matrix
 Matrix::invert()
 {
-    Matrix invert, cof;
+    Matrix invert, cof, trans;
     double det = determinant(), mod = 1.0;
     unsigned int idx, idy;
 
     /* If the determinant is zero, it could mean that the matrix is not square. */
     if (det == 0)
-        return invert;
+        return * (new Matrix());
 
     cof.nrows = nrows;
     cof.ncolumns = ncolumns;
+	cof.matrix = new std::vector<double>(cof.nrows * cof.ncolumns);
     for (idx = 0; idx < nrows; idx++)
         for (idy = 0; idy < ncolumns; idy++) {
             cof.setElement(idx, idy, getAdjoint(idx, idy).determinant() * mod);
@@ -369,9 +374,10 @@ Matrix::invert()
     /* Calculating the inverse. */
     det = 1 / det;
 
+	trans = cof.transponse();
     invert = cof.transponse() * det;
 
-    return invert;
+    return * (new Matrix(invert));
 }
 
 /**

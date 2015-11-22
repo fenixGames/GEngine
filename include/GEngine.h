@@ -17,7 +17,8 @@ namespace GEngine {
         class Ellipse;
         class RegPol;
         class Rectangle;
-        class Polyhedra;
+		class Mesh;
+        class Polyhedron;
     };
 
 }

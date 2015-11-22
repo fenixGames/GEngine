@@ -95,6 +95,21 @@ printFigures(FigureList * list, int winId, struct camera cam)
     glVertex3d(result.getElement(0, 5), result.getElement(1, 5), result.getElement(2, 5));
     glEnd();
     glViewport( 0, 0, cam.screen[0], cam.screen[1] );
+	
+	glBegin(GL_LINES);
+    glColor3d( 1.0, 0.0, 0.0);
+    glVertex3d(result.getElement(0, 0), result.getElement(1, 0), result.getElement(2, 0));
+    glVertex3d(result.getElement(0, 1), result.getElement(1, 1), result.getElement(2, 1));
+    
+    glColor3d(0.0, 1.0, 0.0);
+    glVertex3d(result.getElement(0, 2), result.getElement(1, 2), result.getElement(2, 2));
+    glVertex3d(result.getElement(0, 3), result.getElement(1, 3), result.getElement(2, 3));
+    
+    glColor3d(0.0, 0.0, 1.0);
+    glVertex3d(result.getElement(0, 4), result.getElement(1, 4), result.getElement(2, 4));
+    glVertex3d(result.getElement(0, 5), result.getElement(1, 5), result.getElement(2, 5));
+    glEnd();
+
 #endif
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
@@ -112,16 +127,22 @@ printFigures(FigureList * list, int winId, struct camera cam)
 			vpy = (*pointIter)->y;
             vpz = (*pointIter)->z;
 
+			printf( "Point = (%f, %f, %f)\n", vpx, vpy, vpz);
 			out = total * Vector(4, vpx, vpy, vpz, 1.0);
 
             /* Getting the distance to the camera. */
-            vpx = (double) out.getElement(0);
-            vpy = (double) out.getElement(1);
-            vpz = (double) out.getElement(2);
-            dist = sqrt(vpx * vpx + vpy * vpy + vpz * vpz);
-
+			vpx = out.getElement(0);
+			vpy = out.getElement(1);
+			vpz = out.getElement(2);
+			out = transf * Vector(4, vpx - cam.position[0],
+						   	vpy - cam.position[1], 
+							vpz - cam.position[2], 1.0);
+			dist = sqrt(out.getElement(0) * out.getElement(0) +
+						   	out.getElement(1) * out.getElement(1) +
+						   	out.getElement(2) * out.getElement(2));
+            
 			/* Printing the points. */
-			glVertex4d(out.getElement(0), out.getElement(1), out.getElement(2), dist);
+			glVertex4d(vpx, vpy, vpz, dist);
         }
 		glEnd();
     }
@@ -140,8 +161,6 @@ printFigures(FigureList * list, int winId, struct camera cam)
  */
 Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
 {
-	double ax, ay, az;
-
     /* Setting the components of this class. */
     screen[0] = width;
     screen[1] = height;
@@ -165,9 +184,6 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
     figures = NULL;
 
 	/* Settign the transformation matrix to the default values. */
-	ax = 2.0 / (screen[0] - 1.0); /* Setting the X modifier. */
-	ay = 2.0 / (screen[1] - 1.0); /* Setting the Y modifier. */
-    az = (screen[2] > 0 ? 2.0 / (screen[2] - 1.0) : 0); /* Setting the Z modifier. */
     memset(&displayCam, 0, sizeof(struct camera));
     memcpy(&displayCam.screen, screen, sizeof(GLuint) * 3);
 

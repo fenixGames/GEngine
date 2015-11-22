@@ -12,7 +12,8 @@
 #include <GL/gl.h>
 #include "matrix.h"
 
-#define PointList std::list<Point *>
+#define PointList 	std::list<Point *>
+#define MeshList	std::list<Mesh *>
 
 /* The following declarations are needed for the Figure part. */
 
@@ -31,7 +32,8 @@ namespace GEngine {
         class Ellipse;
         class RegPol;
         class Rectangle;
-        class Polyhedra;
+		class Mesh;
+        class Polyhedron;
     };
 };
 #endif
@@ -241,15 +243,29 @@ class GEngine::Geometry::Rectangle : public GEngine::Geometry::Polygon {
         Rectangle(Point p1, Point p2);
 };
 
+class GEngine::Geometry::Mesh {
+	protected:
+		Vector	normal;
+		Point	point;
+	public:
+		Mesh(Vector vect, Point v);
+		Mesh(const Mesh& mesh);
+		Mesh(Point points[3]);
+
+		/* Calculates the intersection of the three meshes. */
+		static Point * intersection(const Mesh m1, const Mesh m2, const Mesh m3);
+};
+
 /**
- * Defining a polyhedra.
+ * Defining a polyhedron.
  */
-class GEngine::Geometry::Polyhedra : public GEngine::Geometry::StaticFigure {
+class GEngine::Geometry::Polyhedron : public GEngine::Geometry::StaticFigure {
     protected:
-        PointList   * pointList;
+        MeshList   * meshList;
     public:
-        Polyhedra(PointList list);
-        Polyhedra(Point ** list = NULL, unsigned int npoints = 0);
+        Polyhedron(MeshList list);
+        Polyhedron(Mesh ** list = NULL, unsigned int nmeshes = 0);
+		~Polyhedron();
 
         /* Prints the polyhedra on the screen. */
         virtual PointList * print();

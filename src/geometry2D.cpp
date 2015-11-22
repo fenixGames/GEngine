@@ -141,7 +141,7 @@ Figure::operator = (const Figure& fig)
  * @param   int     time    The time for the motion, unused for static.
  */
 void
-StaticFigure::motion(int __unused time)
+StaticFigure::motion(int time_stamp)
 {
 }
 
@@ -276,8 +276,8 @@ Point::tween(const Point p1, const Point p2, double time)
  */
 Arc::Arc(Point c, Point s, GLfloat a)
 {
-    center.x = c.x; center.y = c.y;
-    start.x = s.x; start.y = s.y;
+    center.x = c.x; center.y = c.y; center.z = c.z;
+    start.x = s.x; start.y = s.y; start.z = s.z;
     angle = a;
  
 	org[0] = c.x;
@@ -385,7 +385,7 @@ Sector::print()
 /**
  * Constructor of the circuference, which is an extension of an arc.
  */
-Circle::Circle(Point c, GLint radius) : Arc(c, Point(c.x + radius, c.y), 360.0f)
+Circle::Circle(Point c, GLint radius) : Arc(c, Point(c.x + radius, c.y, c.z), 360.0f)
 {
     mode = GL_POLYGON;
 }

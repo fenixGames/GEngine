@@ -55,7 +55,6 @@ class Matrix {
         unsigned int nrows, ncolumns;
 		std::vector<double> * matrix;
 
-        Matrix getAdjoint(unsigned int row, unsigned int col) const;
     public:
         Matrix(unsigned int rows = 0, unsigned int cols = 0, ...);
 		Matrix(const Matrix& matrix);
@@ -94,6 +93,9 @@ class Matrix {
 
 		/* Returns the identity matrix. */
 		static Matrix identity(int size);
+        
+		/* Retruns the adjoint matrix of the current one. */
+		Matrix getAdjoint(unsigned int row, unsigned int col) const;
 #ifdef DEBUG
         /* Printing a matrix only makes sense on debug. */
         virtual void print() const;

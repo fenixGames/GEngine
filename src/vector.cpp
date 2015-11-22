@@ -142,7 +142,7 @@ Vector::operator = (Vector vect)
 		delete elements;
 
 	elements = new std::vector<double>(nelem);
-    for (int idx = 0; idx < nelem; idx++)
+    for (unsigned int idx = 0; idx < nelem; idx++)
         (*elements)[idx] = vect.elements->at(idx);
 
 	return *this;
@@ -195,7 +195,7 @@ void
 Vector::print() {
     printf("Vector %d\n[", nelem);
 
-    for(int idx = 0; idx < nelem; idx++)
+    for(unsigned int idx = 0; idx < nelem; idx++)
         printf(" %f,", elements->at(idx));
     printf("\b ]\n"); 
 }
