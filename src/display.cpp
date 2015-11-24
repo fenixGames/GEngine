@@ -134,15 +134,17 @@ printFigures(FigureList * list, int winId, struct camera cam)
 			vpx = out.getElement(0);
 			vpy = out.getElement(1);
 			vpz = out.getElement(2);
-			out = transf * Vector(4, vpx - cam.position[0],
-						   	vpy - cam.position[1], 
-							vpz - cam.position[2], 1.0);
-			dist = sqrt(out.getElement(0) * out.getElement(0) +
-						   	out.getElement(1) * out.getElement(1) +
-						   	out.getElement(2) * out.getElement(2));
+			out = transf * Vector(4, cam.position[0],
+						   	cam.position[1], 
+							cam.position[2], 1.0);
+            vpx -= out.getElement(0);
+            vpy -= out.getElement(1);
+            vpz -= out.getElement(2);
+
+			dist = sqrt(vpx * vpx + vpy * vpy + vpz * vpz);
             
 			/* Printing the points. */
-			glVertex4d(vpx, vpy, vpz, dist);
+			glVertex4d(vpx, vpy, vpz, dist == 0.0 ? 1.0 : dist);
         }
 		glEnd();
     }

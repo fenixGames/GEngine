@@ -260,10 +260,14 @@ class GEngine::Geometry::Mesh {
  * Defining a polyhedron.
  */
 class GEngine::Geometry::Polyhedron : public GEngine::Geometry::StaticFigure {
+    private:
+        void getPoints(MeshList * list);
     protected:
-        MeshList   * meshList;
+        PointList   * pointList;
     public:
         Polyhedron(MeshList list);
+        Polyhedron(PointList list);
+        Polyhedron(Point ** list, unsigned int npoints);
         Polyhedron(Mesh ** list = NULL, unsigned int nmeshes = 0);
 		~Polyhedron();
 

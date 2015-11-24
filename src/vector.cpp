@@ -1,5 +1,6 @@
 #include "matrix.h"
 #include <stdlib.h>
+#include <math.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -118,7 +119,7 @@ Vector::operator * (Vector v1)
 Vector
 Vector::operator * (double value)
 {
-    Vector  v1;
+    Vector  v1 = Vector(*this);
     unsigned int idx;
 
 	for (idx = 0; idx < nelem; idx++)
@@ -185,6 +186,17 @@ Vector::setElement(unsigned int index, double value)
 Vector::~Vector()
 {
 	delete elements;
+}
+
+/**
+ * Calculates the modulus of the vector and returns it.
+ * @return  The modulus of the vector.
+ */
+double
+Vector::mod()
+{
+    return sqrt(getElement(0) * getElement(0) + getElement(1) * getElement(1) + 
+            getElement(2) * getElement(2));
 }
 
 #ifdef DEBUG

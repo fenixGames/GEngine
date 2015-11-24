@@ -1,6 +1,9 @@
 #include "geometry.h"
 #include <math.h>
 #include <GL/glut.h>
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 #define POINT_PREC  180.0f
 #define PI  M_PI
@@ -29,14 +32,17 @@ Mesh::Mesh(Point points[3])
 			points[2].x - points[0].x, 	points[2].y - points[0].y, 	points[2].z - points[0].z),
 			adj;
 	int idx;
+    double mod = 1.0;
 
 	point = Point(points[0]);
 	normal = Vector(3, 0.0, 0.0, 0.0);
 
 	for (idx = 0; idx < 3; idx++) {
 		adj = calc.getAdjoint(0, idx);
-		normal.setElement(idx, adj.determinant());
+		normal.setElement(idx, mod * adj.determinant());
+        mod *= -1.0;
 	}
+    normal = normal * (1 / normal.mod());
 }
 
 /**
@@ -74,78 +80,89 @@ Mesh::intersection(Mesh m1, Mesh m2, Mesh m3)
 
 	invert = meshMat.invert();
 	result = (invert) * cMeshes;
-
 	return new Point(result.getElement(0), result.getElement(1), result.getElement(2));
 }
 
 /**
- * Constructor of the polyhedra.
+ * Constructors of the polyhedron.
  */
-Polyhedron::Polyhedron(MeshList points)
+Polyhedron::Polyhedron(MeshList meshes)
 {
+    MeshList meshList;
     MeshList::iterator iter;
 
-    meshList = new MeshList();
+    for (iter = meshes.begin(); iter != meshes.end(); iter++)
+        meshList.push_back(*iter);
 
-    for (iter = points.begin(); iter != points.end(); iter++)
-        meshList->push_back(*iter);
+    mode = GL_TRIANGLE_STRIP;
 
-    mode = GL_POLYGON;
+    getPoints(&meshList);
 }
 
 Polyhedron::Polyhedron(Mesh ** mlist, unsigned int nmeshes)
 {
+    MeshList   meshes;
     unsigned int idx;
 
-	meshList = NULL;
+    pointList = NULL;
 
     /* Check the input. If list is NULL or the number of points is zero, return. */
     if (nmeshes == 0 || mlist == NULL)
         return;
 
-    meshList = new MeshList();
     for (idx = 0; idx < nmeshes; idx++)
-        meshList->push_back(mlist[idx]);
-    
+        meshes.push_back(mlist[idx]);
+
+    mode = GL_TRIANGLE_STRIP;
+    getPoints(&meshes);
+}
+
+Polyhedron::Polyhedron(PointList list)
+{
+    PointList::iterator iter;
+
+    pointList = new PointList();
+
+    /* Copying the list of vertices. */
+    for (iter = list.begin(); iter != list.end(); iter++)
+        pointList->push_back(new Point(*(*iter)));
+
     mode = GL_TRIANGLE_STRIP;
 }
 
-/**
- * Destructor of the polyhedron.
- */
-Polyhedron::~Polyhedron()
+Polyhedron::Polyhedron(Point ** list, unsigned int npoints)
 {
-	if (meshList != NULL)
-		delete meshList;
+    unsigned int idx;
+
+    pointList = new PointList();
+
+    /* Inserting the list of vertices. */
+    for (idx = 0; idx < npoints; idx++)
+        pointList->push_back(new Point(*list[idx]));
+    mode = GL_TRIANGLE_STRIP;
 }
-#ifdef DEBUG
-#include <stdio.h>
-#endif
 /**
- * Prints the polyhedra on the screen by calculating the intersection of three meshes 
- * each time.
+ * Calculates the points where the meshes merge.
+ * @param   MeshList    * meshList  The list of meshes whose points must be calculated.
  */
-PointList *
-Polyhedron::print()
+void
+Polyhedron::getPoints(MeshList * meshList)
 {
-    PointList * printing = new PointList();
-	PointList vertices; /* Set a Vertices list. */
-	PointList::iterator vit;
 	MeshList::iterator	i1, i2, i3;
+    PointList vertices; /* Set a Vertices list. */
+	PointList::iterator vit;
 	Point	* temp;
 	unsigned int nedges;
 
-	if (meshList == NULL)
-		return printing;
+    pointList = new PointList();
 
-	/* Going through the list of meshes and calculating the vertices of the polyhedron. */
+    /* Going through the list of meshes and calculating the vertices of the polyhedron. */
 	for (i1 = meshList->begin(); i1 != meshList->end(); i1++) {
 		i2 = i1;
 		for (i2++; i2 != meshList->end(); i2++) {
 			i3 = i2;
 			for (i3++; i3 != meshList->end(); i3++) {
 				temp = Mesh::intersection(*(*i1), *(*i2), *(*i3));
-				printf( "temp = (%f, %f, %f)\n", temp->x, temp->y, temp->z);
 				if (temp != NULL)
 					vertices.push_back(temp);
 			}
@@ -156,20 +173,46 @@ Polyhedron::print()
 	nedges = meshList->size() + vertices.size() - 2;
 	while (!vertices.empty()) {
 		temp = vertices.front();
-		printing->push_back(new Point(temp->x, temp->y, temp->z));
+		pointList->push_back(new Point(temp->x, temp->y, temp->z));
 		vertices.pop_front();
 	}
 
- 	nedges -= printing->size();
-	vit = printing->begin();
+ 	nedges -= pointList->size();
+	vit = pointList->begin();
 
 	/* If there are not enough vertices on the printing list, add the first ones again. */
 	while (nedges > 0) {
 		temp = * vit;
-		printing->push_back(new Point(temp->x, temp->y, temp->z));
+		pointList->push_back(new Point(temp->x, temp->y, temp->z));
 		vit++;
 		nedges--;
 	}
+}
+
+/**
+ * Destructor of the polyhedron.
+ */
+Polyhedron::~Polyhedron()
+{
+	if (pointList != NULL)
+		delete pointList;
+}
+
+/**
+ * Prints the polyhedra on the screen by calculating the intersection of three meshes 
+ * each time.
+ */
+PointList *
+Polyhedron::print()
+{
+    PointList * printing = new PointList();
+    PointList::iterator iter;
+
+    /* Going through the list of points and copy them into the new list. */
+    for (iter = pointList->begin(); iter != pointList->end(); iter++) {
+        printing->push_back(new Point(*(*iter)));
+    }
+
     return printing;
 }
 

@@ -42,6 +42,8 @@ class Vector {
 		double getElement(unsigned int i);
         void setElement(unsigned int i, double value);
 
+        /* Calculates the modulus of the vector. */
+        double mod();
 #ifdef DEBUG
         void print();
 #endif
