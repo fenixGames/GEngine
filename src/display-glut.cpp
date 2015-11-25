@@ -5,9 +5,6 @@ using namespace GEngine;
 
 Display *Display::theDisplay = NULL;
 
-/* Declaring the external static funstions to draw the 2D and 3D figures. */
-extern int printFigures(FigureList * list, int winId, struct camera cam);
-
 /**
  * Wrapper for the GLUT dependent initialization of the screen.
  */
@@ -48,9 +45,6 @@ Display::print()
         mainWin = glutCreateWindow("");
     else
         mainWin = glutCreateWindow(title);
-
-    /* Setting the background color. */
-    glClearColor(bgcolor[0], bgcolor[1], bgcolor[2], 0.0f);
 
     /* Setting the function to redraw everything. */
     glutDisplayFunc(&Display::displayFunc);

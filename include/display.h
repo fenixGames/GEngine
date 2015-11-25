@@ -40,6 +40,7 @@ class GEngine::Display {
 	private:
         static void displayInit();
         static void SwapBuffers();
+        void initGL();
     protected:
         GLuint screen[3];   /* Dimensions of the main window. */
         GLuint position[2]; /* Position of the main window. */

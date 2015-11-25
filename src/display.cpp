@@ -28,7 +28,7 @@ printFigures(FigureList * list, int winId, struct camera cam)
     PointList               * pointList;
     PointList::iterator     pointIter;
     FigureList::iterator    iter;
-    Matrix                  tr, rotx, roty, rotz, proj, transf, total;
+    Matrix                  tr, total;
 #ifdef DEBUG
     Matrix                  axis(4, 6, 
                                 -1.0, 1.0,  0.0, 0.0,  0.0, 0.0,
@@ -37,7 +37,7 @@ printFigures(FigureList * list, int winId, struct camera cam)
                                  0.0, 0.0,  0.0, 0.0,  0.0, 0.0), result;
 #endif
 	Vector				 	out(4, 0, 0, 0, 0);
-	double					vpx, vpy, vpz, dist;
+	double					vpx, vpy, vpz, dist, matrix[16];
 
     /* If the list is NULL we should draw nothing. */
     if (list == NULL)
@@ -49,36 +49,13 @@ printFigures(FigureList * list, int winId, struct camera cam)
             0.0, 1.0, 0.0, (double) - cam.position[1],
             0.0, 0.0, 1.0, (double) - cam.position[2],
             0.0, 0.0, 0.0, 1.0);
-    rotx = Matrix(4, 4,
-            1.0, 0.0,           0.0,            0.0,
-            0.0, cos(cam.yaw),  -sin(cam.yaw),  0.0,
-            0.0, sin(cam.yaw),  cos(cam.yaw),   0.0,
-            0.0, 0.0,           0.0,            1.0);
-    roty = Matrix(4, 4,
-            cos(cam.pitch), 0.0, -sin(cam.pitch),   0.0,
-            0.0,            1.0, 0.0,               0.0,
-            sin(cam.pitch), 0.0, cos(cam.pitch),    0.0,
-            0.0,            0.0, 0.0,               1.0);
-    rotz = Matrix(4, 4,
-            cos(cam.roll),  -sin(cam.roll), 0.0,    0.0,
-            sin(cam.roll),  cos(cam.roll),  0.0,    0.0,
-            0.0,            0.0,            1.0,    0.0,
-            0.0,            0.0,            0.0,    1.0);
-    vpx = 2.0 / (cam.screen[0] - 1.0);
-    vpy = 2.0 / (cam.screen[1] - 1.0);
-    vpz = 2.0 / (cam.screen[2] - 1.0);
-    transf = Matrix(4, 4,
-            vpx,    0.0,    0.0,    0.0,
-            0.0,    vpy,    0.0,    0.0,
-            0.0,    0.0,    vpz,    0.0,
-            0.0,    0.0,    0.0,    1.0);
-
-    total = transf * rotx * roty * rotz * tr;
+    
+    total = tr;
 #ifdef DEBUG
-    result = rotx * roty * rotz * axis;
-/*    result.print();
+    result = axis; 
+    result.print();
     tr.print();
-    total.print();*/
+    total.print();
 
     glViewport( 5, cam.screen[1] - 55, 50, 50 );
     glBegin(GL_LINES);
@@ -111,6 +88,22 @@ printFigures(FigureList * list, int winId, struct camera cam)
     glEnd();
 
 #endif
+    /* Setting the translation of the objects. */
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glRotated(cam.yaw * 180.0 / M_PI, 1.0, 0.0, 0.0);
+    glRotated(cam.pitch * 180.0 / M_PI, 0.0, 1.0, 0.0);
+    glRotated(cam.roll * 180.0 / M_PI, 0.0, 0.0, 1.0);
+//    glTranslated(cam.position[0], cam.position[1], cam.position[2]);
+    glGetDoublev(GL_MODELVIEW_MATRIX, matrix);
+#ifdef DEBUG
+    printf("modelview = [ ");
+    for (int idx = 0; idx < 16; idx++)
+        printf("%f, ", matrix[idx]);
+    printf("\b\b ]\n");
+#endif
+
+
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
         pointList = (*iter)->print();
@@ -127,19 +120,16 @@ printFigures(FigureList * list, int winId, struct camera cam)
 			vpy = (*pointIter)->y;
             vpz = (*pointIter)->z;
 
-			printf( "Point = (%f, %f, %f)\n", vpx, vpy, vpz);
 			out = total * Vector(4, vpx, vpy, vpz, 1.0);
 
             /* Getting the distance to the camera. */
 			vpx = out.getElement(0);
 			vpy = out.getElement(1);
 			vpz = out.getElement(2);
-			out = transf * Vector(4, cam.position[0],
-						   	cam.position[1], 
-							cam.position[2], 1.0);
-            vpx -= out.getElement(0);
-            vpy -= out.getElement(1);
-            vpz -= out.getElement(2);
+            
+            vpx -= cam.position[0];
+            vpy -= cam.position[1];
+            vpz -= cam.position[2];
 
 			dist = sqrt(vpx * vpx + vpy * vpy + vpz * vpz);
             
@@ -149,6 +139,7 @@ printFigures(FigureList * list, int winId, struct camera cam)
 		glEnd();
     }
 	delete pointList;
+
 	return 0;
 }
 
@@ -185,7 +176,7 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
     /* Initializing the lists of figures to NULL. */
     figures = NULL;
 
-	/* Settign the transformation matrix to the default values. */
+	/* Setting the camera to the default position. */
     memset(&displayCam, 0, sizeof(struct camera));
     memcpy(&displayCam.screen, screen, sizeof(GLuint) * 3);
 
@@ -223,14 +214,11 @@ Display::displayFunc()
 
     /* Cleans the screen. */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(Display::theDisplay->position[0], Display::theDisplay->position[1],
-            Display::theDisplay->screen[0], Display::theDisplay->screen[1]);
+/*    glViewport(Display::theDisplay->position[0], Display::theDisplay->position[1],
+            Display::theDisplay->screen[0], Display::theDisplay->screen[1]);*/
     glColor3f(Display::theDisplay->fgcolor[0],
             Display::theDisplay->fgcolor[1], Display::theDisplay->fgcolor[2]);
 
-    /* Setting the Basic axis to debug the engine's printing. */
-    glPointSize(4.0f);
-    
     /* Prints the figures of the list. */
     printFigures(list, Display::theDisplay->mainWin, Display::theDisplay->displayCam);
 
@@ -457,5 +445,29 @@ Display::lastFigure()
 		return NULL;
 
     return figures->back();
+}
+
+/**
+ * Initialize the GL functions before printing.
+ */
+void
+Display::initGL()
+{
+    GLuint * screen = displayCam.screen;
+
+    /* Setting the background color. */
+    glClearColor(bgcolor[0], bgcolor[1], bgcolor[2], 0.0f);
+
+    /* Setting the initial modelview and projection matrices. */
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
+            0.5 * screen[1], 0, screen[2]);
+
+    /* Setting the sizes of the points and the lines if needed. */
+    glPointSize(4.0f);
+    
 }
 
