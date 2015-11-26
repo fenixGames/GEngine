@@ -42,6 +42,7 @@ namespace GEngine {
 
 /**
  * The abstract class for the printable objects.
+ * TODO: Calculate the distance to the camera (Point)
  */
 class GEngine::Geometry::Figure {
 		friend class Point;
@@ -53,7 +54,7 @@ class GEngine::Geometry::Figure {
                               be developed by the user. */
         PointList * buffer;   /* The calculated list of points to be printed. Usefull for movement. */
     public:
-		int		org[2];		/* The local origin of coordinates for the figure. */
+		int		org[3];		/* The local origin of coordinates for the figure. */
 	
         Figure();
 		Figure(const Figure& fig);
@@ -115,9 +116,6 @@ class GEngine::Geometry::Point  {
 
 		/* Transforms the point locally. */
         Point * transform(Figure * ptr);
-
-		/* Set the transformation operation for the points. */
-		//Point * operator * (Matrix * transf);
 
         /* Calculates the point between another two using a time parameter. */
         static Point * tween(const Point p1, const Point p2, double time);

@@ -61,6 +61,7 @@ Vector::operator + (const Vector v1)
         return v2;
     
     v2.nelem = nelem;
+    v2.elements = new std::vector<double>(v2.nelem);
 
     /* Adding the elements. */
     for (idx = 0; idx < nelem; idx++)
@@ -87,6 +88,7 @@ Vector::operator - (const Vector v1)
         return v2;
     
     v2.nelem = nelem;
+    v2.elements = new std::vector<double>(v2.nelem);
 
     /* Adding the elements. */
     for (idx = 0; idx < nelem; idx++)

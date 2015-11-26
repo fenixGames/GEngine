@@ -13,6 +13,7 @@
 namespace GEngine {
 	class Display;
     class Camera;
+    class StaticCamera;
     namespace Geometry {
         class Figure;
         class StaticFigure;

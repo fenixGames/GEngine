@@ -31,6 +31,7 @@ add_library(gengine SHARED
 		$<TARGET_OBJECTS:display> 
 		$<TARGET_OBJECTS:geometry>
 		$<TARGET_OBJECTS:matrix>
+        $<TARGET_OBJECTS:camera>
 		)
 target_link_libraries(gengine GL glut)
 set_target_properties(gengine PROPERTIES VERSION ${GEngine_VERSION_MAJOR}.${GEngine_VERSION_MINOR} 

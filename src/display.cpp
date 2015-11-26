@@ -21,91 +21,56 @@ using namespace GEngine::Geometry;
  *
  * @param FigureList    * list  The list of figures to draw.
  * @param int           winId   The id of the window where to draw the points.
+ * @param Camera        * cam   The camera which records the scene.
+ * @param GLuint        depth   The depth of the scene.
  *
  * @return Returns 0 on success or the error code on failure.
  */
 int 
-printFigures(FigureList * list, int winId, struct camera cam)
+printFigures(FigureList * list, int winId, Camera * cam)
 {
     PointList               * pointList;
     PointList::iterator     pointIter;
     FigureList::iterator    iter;
-    Matrix                  tr, total;
-#ifdef DEBUG
-    Matrix                  axis(4, 6, 
-                                -1.0, 1.0,  0.0, 0.0,  0.0, 0.0,
-                                 0.0, 0.0, -1.0, 1.0,  0.0, 0.0,
-                                 0.0, 0.0,  0.0, 0.0, -1.0, 1.0,
-                                 0.0, 0.0,  0.0, 0.0,  0.0, 0.0), result;
-#endif
-	Vector				 	out(4, 0, 0, 0, 0);
-	double					vpx, vpy, vpz, dist, matrix[16];
+	double					dist;
 
     /* If the list is NULL we should draw nothing. */
     if (list == NULL)
         return 0;
 
-    /* Create the translation and rotation matrices. */
-    tr = Matrix(4, 4, 
-            1.0, 0.0, 0.0, (double) - cam.position[0],
-            0.0, 1.0, 0.0, (double) - cam.position[1],
-            0.0, 0.0, 1.0, (double) - cam.position[2],
-            0.0, 0.0, 0.0, 1.0);
-    
-    total = tr;
-#ifdef DEBUG
-    result = axis; 
-    result.print();
-    tr.print();
-    total.print();
+    /* If there is no camera, nothing must be shown. */
+    if (cam == NULL)
+        return 0;
 
-    glViewport( 5, cam.screen[1] - 55, 50, 50 );
-    glBegin(GL_LINES);
-    glColor3d( 1.0, 0.0, 0.0);
-    glVertex3d(result.getElement(0, 0), result.getElement(1, 0), result.getElement(2, 0));
-    glVertex3d(result.getElement(0, 1), result.getElement(1, 1), result.getElement(2, 1));
-    
-    glColor3d(0.0, 1.0, 0.0);
-    glVertex3d(result.getElement(0, 2), result.getElement(1, 2), result.getElement(2, 2));
-    glVertex3d(result.getElement(0, 3), result.getElement(1, 3), result.getElement(2, 3));
-    
-    glColor3d(0.0, 0.0, 1.0);
-    glVertex3d(result.getElement(0, 4), result.getElement(1, 4), result.getElement(2, 4));
-    glVertex3d(result.getElement(0, 5), result.getElement(1, 5), result.getElement(2, 5));
-    glEnd();
-    glViewport( 0, 0, cam.screen[0], cam.screen[1] );
-	
+#ifdef DEBUG
+    StaticCamera axiscam(*cam);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    axiscam.move(Point());
+
+    axiscam.activate();
 	glBegin(GL_LINES);
     glColor3d( 1.0, 0.0, 0.0);
-    glVertex3d(result.getElement(0, 0), result.getElement(1, 0), result.getElement(2, 0));
-    glVertex3d(result.getElement(0, 1), result.getElement(1, 1), result.getElement(2, 1));
+    glVertex3d(-1.0, 0.0, 0.0);
+    glVertex3d( 1.0, 0.0, 0.0);
     
     glColor3d(0.0, 1.0, 0.0);
-    glVertex3d(result.getElement(0, 2), result.getElement(1, 2), result.getElement(2, 2));
-    glVertex3d(result.getElement(0, 3), result.getElement(1, 3), result.getElement(2, 3));
+    glVertex3d(0.0, -1.0, 0.0);
+    glVertex3d(0.0,  1.0, 0.0);
     
     glColor3d(0.0, 0.0, 1.0);
-    glVertex3d(result.getElement(0, 4), result.getElement(1, 4), result.getElement(2, 4));
-    glVertex3d(result.getElement(0, 5), result.getElement(1, 5), result.getElement(2, 5));
+    glVertex3d(0.0, 0.0, -1.0);
+    glVertex3d(0.0, 0.0, 1.0);
     glEnd();
 
-#endif
-    /* Setting the translation of the objects. */
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glRotated(cam.yaw * 180.0 / M_PI, 1.0, 0.0, 0.0);
-    glRotated(cam.pitch * 180.0 / M_PI, 0.0, 1.0, 0.0);
-    glRotated(cam.roll * 180.0 / M_PI, 0.0, 0.0, 1.0);
-//    glTranslated(cam.position[0], cam.position[1], cam.position[2]);
-    glGetDoublev(GL_MODELVIEW_MATRIX, matrix);
-#ifdef DEBUG
-    printf("modelview = [ ");
-    for (int idx = 0; idx < 16; idx++)
-        printf("%f, ", matrix[idx]);
-    printf("\b\b ]\n");
+    axiscam.deactivate();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
 #endif
 
-
+    cam->activate();
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
         pointList = (*iter)->print();
@@ -117,32 +82,18 @@ printFigures(FigureList * list, int winId, struct camera cam)
 		glColor3d((*iter)->getRed(), (*iter)->getGreen(), (*iter)->getBlue());
 		glBegin((*iter)->getMode());
         for (pointIter = pointList->begin(); pointIter != pointList->end(); pointIter++) {
-            /* Convert point, translate it and rotate it if needed in absolute coordinates. */
-			vpx = (*pointIter)->x;
-			vpy = (*pointIter)->y;
-            vpz = (*pointIter)->z;
-
-			out = total * Vector(4, vpx, vpy, vpz, 1.0);
-
-            /* Getting the distance to the camera. */
-			vpx = out.getElement(0);
-			vpy = out.getElement(1);
-			vpz = out.getElement(2);
-            
-            vpx -= cam.position[0];
-            vpy -= cam.position[1];
-            vpz -= cam.position[2];
-
-			dist = sqrt(vpx * vpx + vpy * vpy + vpz * vpz);
+            dist = cam->getDistance(*(*pointIter));
             
 			/* Printing the points. */
-			glVertex4d(vpx, vpy, vpz, dist == 0.0 ? 1.0 : dist);
+//			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, dist);
+			glVertex3d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z);
         }
 		glEnd();
     }
 	delete pointList;
 
-	return 0;
+	cam->deactivate();
+    return 0;
 }
 
 /**
@@ -178,9 +129,8 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
     /* Initializing the lists of figures to NULL. */
     figures = NULL;
 
-	/* Setting the camera to the default position. */
-    memset(&displayCam, 0, sizeof(struct camera));
-    memcpy(&displayCam.screen, screen, sizeof(GLuint) * 3);
+    /* Initializing the camera to NULL. */
+    camera = NULL;
 
 	if (theDisplay == NULL) {
 		/* OS initialization. */
@@ -207,22 +157,14 @@ Display::~Display()
 void
 Display::displayFunc()
 {
-    FigureList *list = NULL;    /* Shortcut for Display::theDisplay->figures2D */
-
-    /* Getting the figure list. */
-    if (Display::theDisplay != NULL && Display::theDisplay->figures != NULL) {
-        list = Display::theDisplay->figures;
-    } 
-
     /* Cleans the screen. */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-/*    glViewport(Display::theDisplay->position[0], Display::theDisplay->position[1],
-            Display::theDisplay->screen[0], Display::theDisplay->screen[1]);*/
-    glColor3f(Display::theDisplay->fgcolor[0],
-            Display::theDisplay->fgcolor[1], Display::theDisplay->fgcolor[2]);
+    glViewport(theDisplay->position[0], theDisplay->position[1],
+            theDisplay->screen[0], theDisplay->screen[1]);
+    glColor3f(theDisplay->fgcolor[0], theDisplay->fgcolor[1], theDisplay->fgcolor[2]);
 
     /* Prints the figures of the list. */
-    printFigures(list, Display::theDisplay->mainWin, Display::theDisplay->displayCam);
+    printFigures(theDisplay->figures, theDisplay->mainWin, theDisplay->camera);
 
     /* Swaps the buffers so the printing will be visible. */
     SwapBuffers();
@@ -282,83 +224,6 @@ Display::setTitle(const char * _title)
 
     return title != NULL;
 }
-
-/**
- * Rotate the whole display the angle indicated in the argument using the Z axis
- * as the central axis for rotation.
- *
- * @param	GLfloat	angle	The angle to rotate the display.
- */
-void
-Display::roll(GLfloat angle) {
-	/* Normalizing the angle (0 <= angle <= 360). */
-	while (angle > 360.0f)
-		angle -= 360.0f;
-
-	while (angle < 0.0f)
-		angle += 360.0f;
-
-	angle *= M_PI / 180.0f;
-
-    /* Setting the angle. */
-    displayCam.roll = angle;
-}
-
-/**
- * Rotate the whole display the angle indicated in the argument using the X axis
- * as the central axis for rotation.
- *
- * @param	GLfloat	angle	The angle to rotate the display.
- */
-void
-Display::yaw(GLfloat angle) {
-	/* Normalizing the angle (0 <= angle <= 360). */
-	while (angle > 360.0f)
-		angle -= 360.0f;
-
-	while (angle < 0.0f)
-		angle += 360.0f;
-
-	angle *= M_PI / 180.0f;
-
-    /* Setting the angle. */
-    displayCam.yaw = angle;
-}
-
-/**
- * Rotate the whole display the angle indicated in the argument using the Y axis
- * as the central axis for rotation.
- *
- * @param	GLfloat	angle	The angle to rotate the display.
- */
-void
-Display::pitch(GLfloat angle) {
-	/* Normalizing the angle (0 <= angle <= 360). */
-	while (angle > 360.0f)
-		angle -= 360.0f;
-
-	while (angle < 0.0f)
-		angle += 360.0f;
-
-	angle *= M_PI / 180.0f;
-
-    /* Setting the angle. */
-    displayCam.pitch = angle;
-}
-
-/**
- * Translates all the displayable figures to the given point. Usefull to have a different origin of coordinates.
- *
- * @param   Point   point   The new origin of coordinates.
- */
-void
-Display::translate(Point point)
-{
-    displayCam.position[0] = (GLint) point.x;
-    displayCam.position[1] = (GLint) point.y;
-    displayCam.position[2] = (GLint) point.z;
-}
-
 /**
  * Adds a figure object to the list of objects to be printed.
  * @param Figure    *figure     The figure to be added to the list.
@@ -455,7 +320,11 @@ Display::lastFigure()
 void
 Display::initGL()
 {
-    GLuint * screen = displayCam.screen;
+    double matrix[16];
+
+    /* Enabling Lighting and depth. */
+    glEnable(GL_DEPTH);
+//    glEnable(GL_LIGHTING);
 
     /* Setting the background color. */
     glClearColor(bgcolor[0], bgcolor[1], bgcolor[2], 0.0f);
@@ -466,10 +335,42 @@ Display::initGL()
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
-            0.5 * screen[1], 0, screen[2]);
+            0.5 * screen[1], 0.0, - (GLdouble) screen[2]);
+
+    for (int idx = 0; idx < 16; idx++)
+        matrix[idx] = (idx % 5) == 0 ? 1 : 0;
+    matrix[15] /= screen[2];
+
+//    glMultMatrixd(matrix);
 
     /* Setting the sizes of the points and the lines if needed. */
     glPointSize(4.0f);
     
+}
+
+/**
+ * Attaches a camera to the display.
+ * If a previous one was attached, destroy it.
+ * @param   Camera  * cam   The camera to be attached.
+ */
+void
+Display::attachCamera(Camera    *cam)
+{
+    camera = cam;
+}
+
+/**
+ * Creates a new camera and attaches it to the display.
+ * Destroys the camera already attached to the display.
+ * @param   Point   pos     The position of the camera.
+ * @param   double  yaw     The yaw of the camera.
+ * @param   double  pitch   The pitch of the camera.
+ * @param   double  roll    The roll of the camera.
+ */
+void
+Display::newCamera(Point pos, double yaw, double pitch, double roll)
+{
+    Camera  * cam = new StaticCamera(pos, yaw, pitch, roll);
+    attachCamera(cam);
 }
 

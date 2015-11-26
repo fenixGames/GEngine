@@ -13,26 +13,15 @@
 #include <GL/gl.h>
 #include "geometry.h"
 #include "matrix.h"
+#include "camera.h"
 
 #ifndef _GENGINE_H
 namespace GEngine {
     class Display;
-    struct camera;
 }
 #endif
 
 #define FigureList      std::list<GEngine::Geometry::Figure *>
-
-/**
- * The structure to define how the camera should be implemented.
- */
-struct GEngine::camera {
-    GLfloat yaw;            /* The angle to control the yaw of the camera. */
-    GLfloat pitch;          /* The angle to control the pitch of the camera. */
-    GLfloat roll;           /* The angle to control the roll of the camera. */
-    GLint  position[3];    /* The position of the camera. */
-    GLuint  screen[3];      /* The size of the projected screen. */
-};
 
 /**
  * The class associated to the display engine whose in charge of printing everything on the screen.
@@ -55,7 +44,7 @@ class GEngine::Display {
 
         FigureList      * figures;  /* The list of figures of the display. */
 
-        struct camera   displayCam; /* The camera of the display. */
+        Camera          * camera; /* The camera  attached to the display. */
 
         /* The function to draw the screen. */
         static void displayFunc();
@@ -75,14 +64,6 @@ class GEngine::Display {
         /* Sets the title of the actual window. */
         bool setTitle(const char * title);
 
-		/* Rotates the whole display. */
-		void roll(GLfloat angle);
-        void yaw(GLfloat angle);
-        void pitch(GLfloat angle);
-
-        /* Translates the whole display in a 2D or 3D environment. */
-        void translate(Geometry::Point point);
-
         /* Adds a figure to be drawn to the list of objects to draw. */
         void addFigure(Geometry::Figure * figure);
 
@@ -100,6 +81,13 @@ class GEngine::Display {
 
         /* Retrieves the last figure from the list. It does not remove it. */
         Geometry::Figure * lastFigure();
+
+        /* Attaches the camera to the display. */
+        void attachCamera(Camera * cam);
+
+        /* Creates a new camera and attaches it to the display. */
+        void newCamera(Geometry::Point pos = Geometry::Point(), double yaw = 0.0,
+                double pitch = 0.0, double roll = 0.0);
 };
 
 #endif

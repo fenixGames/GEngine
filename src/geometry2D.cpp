@@ -25,10 +25,10 @@ Figure::Figure()
 {
     solid = false;
 	mode = GL_LINES;
-	org[0] = org[1] = 0;
     buffer = NULL;
 	memset(color, 0, sizeof(GLdouble) * 3);
     memset(angle, 0, sizeof(GLfloat) * 3);
+    memset(org, 0, sizeof(int) * 3);
 }
 
 Figure::Figure(const Figure& fig)
@@ -239,22 +239,6 @@ Point::distance(Point p1, Point p2)
 }
 
 /**
- * Transformates a point using the transformation matrix.
- * @param	Matrix	transf	The transformation matrix.
- * @return	The transformated point.
- */
-/*Point *
-Point::operator * (Matrix * transf)
-{
-	Vector in(3, (double) x, (double) y, 1.0), 
-		   out(3, .0, .0, .0);
-
-	out = (* transf) * in;
-
-	return new Point(out.getElement(0), out.getElement(1));
-}*/
-
-/**
  * Calculates the point between two other points using the time as a parameter.
  * This function is usefull for motion.
  * For time values from 0 to 1 are for interpolation, for negative values are used to
@@ -291,6 +275,7 @@ Arc::Arc(Point c, Point s, GLfloat a)
  
 	org[0] = c.x;
 	org[1] = c.y;
+    org[2] = c.z;
     /* The angle must be defined between 0 and 2 * PI, so we calculate the equivalent one. */
     while (angle > 360.0f)
         angle -= 360.0f;
@@ -412,6 +397,7 @@ Segment::Segment(Point sp, Point ep)
 
 	org[0] = (sp.x + ep.x) / 2.0;
 	org[1] = (sp.y + ep.y) / 2.0;
+    org[2] = (sp.z + ep.z) / 2.0;
 }
 
 /**

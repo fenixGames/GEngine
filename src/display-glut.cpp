@@ -49,6 +49,7 @@ Display::print()
     /* Setting the function to redraw everything. */
     glutDisplayFunc(&Display::displayFunc);
 
+    initGL();
 	/* Main loop should be on the GEngine class when finished. */
 	glutMainLoop();
     return 0;
