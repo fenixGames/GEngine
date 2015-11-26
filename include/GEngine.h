@@ -4,7 +4,7 @@
  * @author  Roberto Fernandez Cueto
  * @date    26.11.2015
  *
- * $Id: $
+ * $Id$
  */
 
 #ifndef _GENGINE_H
@@ -12,7 +12,7 @@
 
 namespace GEngine {
 	class Display;
-    struct camera;
+    class Camera;
     namespace Geometry {
         class Figure;
         class StaticFigure;

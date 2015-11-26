@@ -5,7 +5,7 @@
  * @author  Roberto Fernandez Cueto
  * @date    28.10.2015
  *
- * $Id: $
+ * $Id$
  */
 #include "display.h"
 #include <stdio.h>
