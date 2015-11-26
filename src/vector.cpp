@@ -1,3 +1,12 @@
+/**
+ * This file contains all the vectorial functions.
+ *
+ * @author  Roberto Fernandez Cueto
+ * @date    26.11.2015
+ *
+ * $Id: $
+ */
+
 #include "matrix.h"
 #include <stdlib.h>
 #include <math.h>

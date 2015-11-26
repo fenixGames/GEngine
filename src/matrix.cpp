@@ -1,3 +1,12 @@
+/**
+ * This file contains the description of all the matricial functions.
+ *
+ * @author  Roberto Fernandez Cueto
+ * @date    26.11.2015
+ *
+ * $Id: $
+ */
+
 #include "matrix.h"
 #include <stdlib.h>
 

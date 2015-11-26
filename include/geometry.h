@@ -3,6 +3,8 @@
  *
  * @author  Roberto Fernandez Cueto
  * @date    12.10.2015
+ *
+ * $Id: $
  */
 
 #ifndef _GEOMETRY_H

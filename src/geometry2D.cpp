@@ -1,7 +1,16 @@
+/**
+ * This file contains everything about 2D geometrical figures to be printed on the screen.
+ *
+ * @author  Roberto Fernandez Cueto
+ * @date    12.10.2015
+ *
+ * $Id: $
+ */
+
+
 #include "geometry.h"
 #include <math.h>
 #include <GL/glut.h>
-//#include <stdio.h>
 #include <string.h>
 
 #define POINT_PREC  1800.0f /* 10 points per grad. */

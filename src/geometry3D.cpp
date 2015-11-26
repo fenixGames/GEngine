@@ -1,3 +1,12 @@
+/**
+ * This file contains everything about 3D geometrical figures to be printed on the screen.
+ *
+ * @author  Roberto Fernandez Cueto
+ * @date    12.10.2015
+ *
+ * $Id: $
+ */
+
 #include "geometry.h"
 #include <math.h>
 #include <GL/glut.h>

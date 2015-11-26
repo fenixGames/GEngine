@@ -1,3 +1,12 @@
+/**
+ * This file contains everything about the Game Engine..
+ *
+ * @author  Roberto Fernandez Cueto
+ * @date    26.11.2015
+ *
+ * $Id: $
+ */
+
 #ifndef _GENGINE_H
 #define _GENGINE_H
 

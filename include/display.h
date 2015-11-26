@@ -4,6 +4,8 @@
  *
  * @author  Roberto Fernandez Cueto
  * @date    14.10.2015
+ *
+ * $Id: $
  */
 #ifndef _DISPLAY_H
 #define _DISPLAY_H
