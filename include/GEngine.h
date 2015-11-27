@@ -29,8 +29,18 @@ namespace GEngine {
         class Rectangle;
 		class Mesh;
         class Polyhedron;
+        class RegPolyhedron;
+        class Prism;
+        class Pyramid;
+        class SphericalPlane;
+        class Sphere;
+        class EllipsoidalPlane;
+        class Ellipsoid;
+        class Cilinder;
+        class Cone;
+        class Toroid;
     };
-
+    class Material;
 }
 #include "geometry.h"
 #include "display.h"

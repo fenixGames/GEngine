@@ -27,7 +27,7 @@ using namespace GEngine::Geometry;
  * @return Returns 0 on success or the error code on failure.
  */
 int 
-printFigures(FigureList * list, int winId, Camera * cam)
+printFigures(FigureList * list, int winId, Camera * cam, GLuint depth)
 {
     PointList               * pointList;
     PointList::iterator     pointIter;
@@ -74,6 +74,7 @@ printFigures(FigureList * list, int winId, Camera * cam)
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
         pointList = (*iter)->print();
+        
         if ((*iter)->getSolid())
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         else
@@ -82,11 +83,12 @@ printFigures(FigureList * list, int winId, Camera * cam)
 		glColor3d((*iter)->getRed(), (*iter)->getGreen(), (*iter)->getBlue());
 		glBegin((*iter)->getMode());
         for (pointIter = pointList->begin(); pointIter != pointList->end(); pointIter++) {
-            dist = cam->getDistance(*(*pointIter));
-            
+            dist = depth - cam->getDistance(Point(*(*pointIter)));
+            if (dist < 1.0)
+                dist = 1.0;
 			/* Printing the points. */
-//			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, dist);
-			glVertex3d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z);
+			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, 1.0 / dist);
+			
         }
 		glEnd();
     }
@@ -164,7 +166,7 @@ Display::displayFunc()
     glColor3f(theDisplay->fgcolor[0], theDisplay->fgcolor[1], theDisplay->fgcolor[2]);
 
     /* Prints the figures of the list. */
-    printFigures(theDisplay->figures, theDisplay->mainWin, theDisplay->camera);
+    printFigures(theDisplay->figures, theDisplay->mainWin, theDisplay->camera, theDisplay->screen[2]);
 
     /* Swaps the buffers so the printing will be visible. */
     SwapBuffers();
@@ -325,7 +327,7 @@ Display::initGL()
     /* Enabling Lighting and depth. */
     glEnable(GL_DEPTH);
 //    glEnable(GL_LIGHTING);
-
+    
     /* Setting the background color. */
     glClearColor(bgcolor[0], bgcolor[1], bgcolor[2], 0.0f);
 
@@ -336,12 +338,11 @@ Display::initGL()
     glLoadIdentity();
     glOrtho(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
             0.5 * screen[1], 0.0, - (GLdouble) screen[2]);
+    glGetDoublev(GL_PROJECTION_MATRIX, matrix);
 
-    for (int idx = 0; idx < 16; idx++)
-        matrix[idx] = (idx % 5) == 0 ? 1 : 0;
-    matrix[15] /= screen[2];
+    matrix[15] = screen[2];
 
-//    glMultMatrixd(matrix);
+    glLoadMatrixd(matrix);
 
     /* Setting the sizes of the points and the lines if needed. */
     glPointSize(4.0f);

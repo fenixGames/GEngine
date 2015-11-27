@@ -177,7 +177,8 @@ Point::transform(Figure * ptr)
 {
 	Point * end;
     GLfloat * angle = ptr->angle;
-    Vector in(3, x, y, z), out(3, 0.0, 0.0, 0.0);
+    Vector in(3, x - ptr->org[0], y - ptr->org[1], z - ptr->org[2]),
+           out(3, 0.0, 0.0, 0.0);
     /* The three rotational matrix, starting for roll. */
     Matrix roll(3, 3, 
             cos(angle[0]), -sin(angle[0]), 0.0, 
@@ -196,7 +197,8 @@ Point::transform(Figure * ptr)
 
     out = rotation * in;
 
-    end = new Point(out.getElement(0), out.getElement(1), out.getElement(2));
+    end = new Point(out.getElement(0) + ptr->org[0], out.getElement(1) + ptr->org[1],
+            out.getElement(2) + ptr->org[2]);
 	return end;
 }
 
@@ -426,6 +428,8 @@ Polygon::Polygon(PointList list)
     for (iter = list.begin(); iter != list.end(); iter++)
         pointList.push_back(*iter);
 	mode = GL_POLYGON;
+
+    getOrigin();
 }
 
 /**
@@ -441,6 +445,34 @@ Polygon::Polygon(const Point ** list, int number)
     for (idx = 0; idx < number; idx++)
         pointList.push_back((Point *)list[idx]);
 	mode = GL_POLYGON;
+
+    getOrigin();
+}
+
+/**
+ * Searchs for the center of the polygon. Used to calculate the distance to the camera.
+ */
+void
+Polygon::getOrigin()
+{
+    float dist, max_dist = 0.0f;
+    PointList::iterator ita, itb;
+
+    /* Looking for the maximal distance between points, which will generate the diameter 
+     * of the polygon. */
+    for (ita = pointList.begin(); ita != pointList.end(); ita++) {
+        itb = ita;
+        for (itb++; itb != pointList.end(); itb++) {
+            dist = Point::distance(*(*ita), *(*itb));
+            if (dist > max_dist) {
+                /* Setting the origin. */
+                org[0] = ((*ita)->x + (*itb)->x) / 2.0;
+                org[1] = ((*ita)->y + (*itb)->y) / 2.0;
+                org[2] = ((*ita)->z + (*itb)->z) / 2.0;
+                max_dist = dist;
+            }
+        }
+    }
 }
 
 /**
@@ -481,6 +513,7 @@ EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
     angle = ang;
 	org[0] = cen.x;
 	org[1] = cen.y;
+    org[2] = cen.z;
 
     /* Sanitizing the angle. */
     while (angle > 360.0f)
@@ -583,6 +616,10 @@ RegPol::RegPol(Point center, unsigned int sides, GLint rad)
 				);
 	}
 	mode = GL_POLYGON;
+
+    org[0] = center.x;
+    org[1] = center.y;
+    org[2] = center.z;
 }
 
 /**
@@ -596,6 +633,10 @@ Rectangle::Rectangle(Point p1, Point p2)
 	pointList.push_back(new Point(p1.x, p1.y));
 	pointList.push_back(new Point(p1.x, p2.y));
 	pointList.push_back(new Point(p2.x, p2.y));
-	pointList.push_back(new Point(p2.x, p1.y));	
+	pointList.push_back(new Point(p2.x, p1.y));
+
+    org[0] = (p1.x + p2.x) / 2.0;
+    org[1] = (p1.y + p2.y) / 2.0;
+    org[2] = (p1.z + p2.z) / 2.0;
 }
 

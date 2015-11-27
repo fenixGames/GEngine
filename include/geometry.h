@@ -36,13 +36,22 @@ namespace GEngine {
         class Rectangle;
 		class Mesh;
         class Polyhedron;
+        class RegPolyhedron;
+        class Prism;
+        class Pyramid;
+        class SphericalPlane;
+        class Sphere;
+        class EllipsoidalPlane;
+        class Ellipsoid;
+        class Cilinder;
+        class Cone;
+        class Toroid;
     };
 };
 #endif
 
 /**
  * The abstract class for the printable objects.
- * TODO: Calculate the distance to the camera (Point)
  */
 class GEngine::Geometry::Figure {
 		friend class Point;
@@ -177,6 +186,8 @@ class GEngine::Geometry::Segment : public GEngine::Geometry::StaticFigure {
  * The class to draw polygons.
  */
 class GEngine::Geometry::Polygon : public GEngine::Geometry::StaticFigure {
+    private:
+        void getOrigin();
     protected:
         PointList pointList;  /* The list of points associated to the polygon. */
     public:
@@ -263,6 +274,7 @@ class GEngine::Geometry::Polyhedron : public GEngine::Geometry::StaticFigure {
     private:
         void getPoints(MeshList * list);
     protected:
+        void getOrigin();
         PointList   * pointList;
     public:
         Polyhedron(MeshList list);
@@ -275,8 +287,18 @@ class GEngine::Geometry::Polyhedron : public GEngine::Geometry::StaticFigure {
         virtual PointList * print();
 };
 
+/**
+ * Defining a prism.
+ */
+class GEngine::Geometry::Prism : public GEngine::Geometry::Polyhedron {
+    private:
+        void getBasePoints(PointList * base, Point center);
+    public:
+        /* Constructor of a prism using bases that are polygons of nsides edges. */
+        Prism(Point cBase1, Point cBase2, unsigned nsides, double radius);
+};
+
 /** TODO 3D Figures:
- *  `- Prisms.
  *  `- Regular polyhedra. 
  *    (Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron)
  *  `- Pyramids.

@@ -97,15 +97,9 @@ Mesh::intersection(Mesh m1, Mesh m2, Mesh m3)
  */
 Polyhedron::Polyhedron(MeshList meshes)
 {
-    MeshList meshList;
-    MeshList::iterator iter;
-
-    for (iter = meshes.begin(); iter != meshes.end(); iter++)
-        meshList.push_back(*iter);
-
     mode = GL_TRIANGLE_STRIP;
 
-    getPoints(&meshList);
+    getPoints(&meshes);
 }
 
 Polyhedron::Polyhedron(Mesh ** mlist, unsigned int nmeshes)
@@ -137,6 +131,7 @@ Polyhedron::Polyhedron(PointList list)
         pointList->push_back(new Point(*(*iter)));
 
     mode = GL_TRIANGLE_STRIP;
+    getOrigin();
 }
 
 Polyhedron::Polyhedron(Point ** list, unsigned int npoints)
@@ -149,6 +144,7 @@ Polyhedron::Polyhedron(Point ** list, unsigned int npoints)
     for (idx = 0; idx < npoints; idx++)
         pointList->push_back(new Point(*list[idx]));
     mode = GL_TRIANGLE_STRIP;
+    getOrigin();
 }
 /**
  * Calculates the points where the meshes merge.
@@ -196,6 +192,30 @@ Polyhedron::getPoints(MeshList * meshList)
 		vit++;
 		nedges--;
 	}
+
+    getOrigin();
+}
+
+/**
+ * Calculates the center of the polyhedron.
+ */
+void
+Polyhedron::getOrigin()
+{
+    PointList::iterator ita, itb;
+    float dist, max_dist = 0.0;
+
+    for (ita = pointList->begin(); ita != pointList->end(); ita++) {
+        itb = ita;
+        for (itb++; itb != pointList->end(); itb++) {
+            dist = Point::distance(*(*ita), *(*itb));
+            if (dist > max_dist) {
+                org[0] = ((*ita)->x + (*itb)->x) / 2.0;
+                org[1] = ((*ita)->y + (*itb)->y) / 2.0;
+                org[2] = ((*ita)->z + (*itb)->z) / 2.0;
+            }
+        }
+    }
 }
 
 /**
@@ -219,9 +239,77 @@ Polyhedron::print()
 
     /* Going through the list of points and copy them into the new list. */
     for (iter = pointList->begin(); iter != pointList->end(); iter++) {
-        printing->push_back(new Point(*(*iter)));
+        printing->push_back((*iter)->transform(this));
     }
 
     return printing;
 }
 
+/**
+ * Constructor of the prism.
+ */
+Prism::Prism(Point cBase1, Point cBase2, unsigned nsides, double radius)
+{
+    PointList bases[2];
+    PointList::iterator * iter, bIter[2];
+    Point   * point, centers[2] = {cBase1, cBase2};
+    unsigned idx, base_idx;
+    double angle = 2.0 * M_PI / nsides;
+
+    /* Calculating the points of the bases. */
+    for (base_idx = 0; base_idx < 2; base_idx++) {
+        for (idx = 0; idx < nsides; idx++) {
+            point = new Point(centers[base_idx]);
+            point->x += radius * cos(angle * idx);
+            point->y += radius * sin(angle * idx);
+            bases[base_idx].push_back(point);
+        }
+    }
+
+    /* Getting the points of the prism as follows:
+     *  -   First, the points of the first base.
+     *  -   Second, the points of the walls.
+     *  -   Last, the points of the second base.
+     */
+    idx = 0;
+    pointList = new PointList();
+
+    /* First base. */
+    getBasePoints(&bases[0], centers[0]);
+    
+    /* Walls. */
+    bIter[0] = bases[0].begin(); bIter[1] = bases[1].begin(); idx = 0;
+    while (bIter[1] != bases[1].end()) {
+        iter = &bIter[idx % 2];
+        pointList->push_back(new Point(*(*(*iter))));
+        (*iter)++;
+        idx++;
+    }
+    //pointList->push_back(new Point(*bases[0].front()));
+
+    /* Second base. */
+    getBasePoints(&bases[1], centers[1]);
+    mode = GL_TRIANGLE_STRIP;
+}
+
+/**
+ * Gets the points of the base.
+ * @param   PointList   *base   The base with the vertices.
+ * @param   Point       center  The center of the base.
+ */
+void
+Prism::getBasePoints(PointList *base, Point center)
+{
+    unsigned idx, nsides = base->size();
+    PointList::iterator  iter;
+
+    idx = 0;
+    for(iter = base->begin(); iter != base->end(); iter++){
+        if (idx % 3 == 2 && nsides != 3) {
+            pointList->push_back(new Point(center));
+            idx++;
+        }
+        pointList->push_back(new Point(*(*iter)));
+        idx++;
+    }
+}
