@@ -112,7 +112,7 @@ StaticCamera::StaticCamera(const Camera& cam)
  * Defines the camera control for the static camera -> do nothing.
  */
 int 
-StaticCamera::cameraCtrl(void __unused *data)
+StaticCamera::cameraCtrl(void *data)
 {
     return 0;
 }
