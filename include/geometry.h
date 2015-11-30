@@ -13,6 +13,7 @@
 #include <list>
 #include <GL/gl.h>
 #include "matrix.h"
+#include "material.h"
 
 #define PointList 	std::list<Point *>
 #define MeshList	std::list<Mesh *>
@@ -59,15 +60,12 @@ class GEngine::Geometry::Figure {
         bool solid; /* Indicates if the figure has solid color. */
 		GLenum	mode;	/* Indicates the mode to use to print. */
 		GLfloat	angle[3];	/* The angles used in the rotation (yaw, pitch, roll). */
-		GLdouble color[3]; /* The color of the figure, some figures could have complex coloring to 
-                              be developed by the user. */
-        PointList * buffer;   /* The calculated list of points to be printed. Usefull for movement. */
+        Material * material; /* The texture asociated to the figure. Could be a color or NULL. */
     public:
 		int		org[3];		/* The local origin of coordinates for the figure. */
 	
         Figure();
 		Figure(const Figure& fig);
-        ~Figure();
 
         /* Virtual functions needed to be overriden. */
         virtual PointList * print() = 0; 
@@ -76,22 +74,21 @@ class GEngine::Geometry::Figure {
         /* By default, all the figures are wired figures, with this, they will be solid. */
         void setSolid();
 
-        /* Returns whether the figure is solid or not. */
-        bool getSolid();
-
         /* Rotates the figure the angle declared in degrees for the yaw, pitch and roll angles. */
         void rotate(GLfloat yaw, GLfloat pitch = 0, GLfloat roll = 0);
 
 		/* Returns the mode to be used to print the figure. */
 		GLenum getMode();
 
-		/* Sets the color for the figure. */
-		void setColor(GLdouble red, GLdouble green, GLdouble blue);
+		/* Sets the material, through a material pointer, a file, a pixelmap or even a RGB component. */
+        void setMaterial(Material * mat);
+        void setMaterialFromFile(const char * file);
+        void setMaterialFromPixMap(const struct Pixmap);
+        void setMaterialFromRGB(GLubyte red, GLubyte green, GLubyte blue);
 
-		/* Gets the corresponding color. */
-		GLdouble getRed();
-		GLdouble getGreen();
-		GLdouble getBlue();
+        /* Activates/deactivates the material for the figure. */
+        void activeMaterial();
+        void deactivateMaterial();
 
 		/* Copy the figure. */
 		Figure& operator = (const Figure& fig);
@@ -114,8 +111,11 @@ class GEngine::Geometry::Point  {
         GLdouble    x, /* The horizontal component of the point. */
                     y, /* The vertical component of the point. */
                     z; /* The depth component of the point. */
+        GLdouble    s, /* The horizontal component of the texture. */
+                    t; /* The vertical component of the texture. */
 
-        Point(GLdouble xx = 0, GLdouble yy = 0, GLdouble zz = 0);
+        Point(GLdouble xx = 0, GLdouble yy = 0, GLdouble zz = 0,
+                GLdouble ss = 0, GLdouble tt = 0);
 
         /* Setting the assignator between two points. */
         Point operator = (Point);
@@ -188,6 +188,7 @@ class GEngine::Geometry::Segment : public GEngine::Geometry::StaticFigure {
 class GEngine::Geometry::Polygon : public GEngine::Geometry::StaticFigure {
     private:
         void getOrigin();
+        float radius;
     protected:
         PointList pointList;  /* The list of points associated to the polygon. */
     public:

@@ -150,6 +150,12 @@ Material::activate()
 	if (texture.data == NULL)
 		return;
 
+    /* If it is a simple color, print the color. */
+    if (type == GL_SOLID_COLOR) {
+        glColor3d(texture.data[0] / 0xFF, texture.data[1] / 0xFF, texture.data[2] / 0xFF);
+        return;
+    }
+
 	glGenTextures(1, &buffer);
 	glBindTexture(GL_TEXTURE_2D, buffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.width, texture.height,

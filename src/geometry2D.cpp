@@ -25,8 +25,7 @@ Figure::Figure()
 {
     solid = false;
 	mode = GL_LINES;
-    buffer = NULL;
-	memset(color, 0, sizeof(GLdouble) * 3);
+    material = NULL;
     memset(angle, 0, sizeof(GLfloat) * 3);
     memset(org, 0, sizeof(int) * 3);
 }
@@ -37,18 +36,11 @@ Figure::Figure(const Figure& fig)
 	mode = fig.mode;
     memcpy(angle, fig.angle, 3 * sizeof(GLfloat));
 	memcpy(org, fig.org, 2* sizeof(int));
-	memcpy(color, fig.color, 3 * sizeof(GLdouble));
 
-    if (fig.buffer != NULL)
-        buffer = new PointList(*fig.buffer);
+    if (fig.material != NULL)
+        material = fig.material;
     else
-        buffer = NULL;
-}
-
-Figure::~Figure()
-{
-    if (buffer != NULL)
-        delete buffer;
+        material = NULL;
 }
 
 /**
@@ -58,15 +50,6 @@ void
 Figure::setSolid()
 {
     solid = true;
-}
-
-/**
- * Returns the solid argument of the figure.
- */
-bool
-Figure::getSolid()
-{
-    return solid;
 }
 
 /**
@@ -95,38 +78,76 @@ Figure::rotate(GLfloat yaw, GLfloat pitch, GLfloat roll)
 }
 
 /**
- * Sets the color for the figure.
- * @param	GLdouble	red		The red component of the color.
- * @param	GLdouble	green	The green component of the color.
- * @param	GLdouble	blue	The blue component of the color.
+ * Sets the material for the figure using a pointer to a material class.
+ * @param   Material    mat     The material to use.
  */
 void
-Figure::setColor(GLdouble red, GLdouble green, GLdouble blue)
+Figure::setMaterial(Material * mat)
 {
-	color[0] = red;
-	color[1] = green;
-	color[2] = blue;
+    material = mat;
 }
 
 /**
- * The three following functions need no comments, retrieves the color component for the figure.
+ * Sets the material from a texture stored on a file.
+ * @param   char    *file   The path to the file where the texture is stored.
  */
-GLdouble
-Figure::getRed()
+void
+Figure::setMaterialFromFile(const char * file)
 {
-	return color[0];
+    material = new Material(Material::GL_FROM_FILE, (void *)file);
 }
 
-GLdouble
-Figure::getGreen()
+/**
+ * Sets the material from a pixmap structure.
+ * @param   Pixmap  pixmap  The pixel map where the info about the texture is stored.
+ */
+void
+Figure::setMaterialFromPixMap(struct Pixmap pixmap)
 {
-	return color[1];
+    material = new Material(Material::GL_FROM_PIXELMAP, (void *)&pixmap);
 }
 
-GLdouble
-Figure::getBlue()
+/**
+ * Sets the material using the RGB color.
+ * @param   GLubyte     red     The red byte of the color.
+ * @param   GLubyte     green     The green byte of the color.
+ * @param   GLubyte     blue     The blue byte of the color.
+ */
+void
+Figure::setMaterialFromRGB(GLubyte red, GLubyte green, GLubyte blue)
 {
-	return color[2];
+    GLubyte color[3] = { red, green, blue };
+
+    material = new Material(Material::GL_SOLID_COLOR, (void *)color);
+}
+
+/**
+ * Activates the material if set, if not, it will be a wired figure that can be solid.
+ * That means that the back faces will not be shown.
+ */
+void
+Figure::activeMaterial()
+{
+    /* Check if the material is set or not. */
+    if (material != NULL) {
+        glPolygonMode(GL_FRONT, GL_FILL);
+        glPolygonMode(GL_BACK, GL_POINT);
+        material->activate();
+    } else if (solid) {
+        glPolygonMode(GL_FRONT, GL_LINE);
+        glPolygonMode(GL_BACK, GL_POINT);
+    } else
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+}
+
+/**
+ * Deactivates the material if it was set.
+ */
+void
+Figure::deactivateMaterial()
+{
+    if (material != NULL)
+        material->deactivate();
 }
 
 /**
@@ -160,11 +181,13 @@ StaticFigure::motion(int time_stamp)
  * @param   GLint   xx  The horizontal component of the point.
  * @param   GLint   yy  The vertical component of the point.
  */
-Point::Point(GLdouble xx, GLdouble yy, GLdouble zz)
+Point::Point(GLdouble xx, GLdouble yy, GLdouble zz, GLdouble ss, GLdouble tt)
 {
     x = xx;
     y = yy;
     z = zz;
+    s = ss;
+    t = tt;
 }
 
 /**
@@ -214,6 +237,8 @@ Point::operator = (Point point)
     x = point.x;
     y = point.y;
     z = point.z;
+    s = point.s;
+    t = point.t;
 
     return *this;
 }
@@ -271,8 +296,8 @@ Point::tween(const Point p1, const Point p2, double time)
  */
 Arc::Arc(Point c, Point s, GLfloat a)
 {
-    center.x = c.x; center.y = c.y; center.z = c.z;
-    start.x = s.x; start.y = s.y; start.z = s.z;
+    center = c;
+    start = s;
     angle = a;
  
 	org[0] = c.x;
@@ -313,7 +338,7 @@ Arc::print() {
         vpx = rad * cos(ang) + center.x;
         vpy = rad * sin(ang) + center.y;
 
-	   	list->push_back(Point(vpx, vpy, center.z).transform(this));
+	   	list->push_back(Point(vpx, vpy, center.z, 0.5 * cos(angle), 0.5 * sin(angle)).transform(this));
         ang += ang_step;
     }
     return list;
@@ -372,7 +397,7 @@ Sector::print()
     Arc   arc(center,  start, angle);
 
     list = arc.print();
-    list->push_front(Point(center.x, center.y, center.z).transform(this));
+    list->push_front(Point(center.x, center.y, center.z, 0.5, 0.5).transform(this));
 
     return list;
 }
@@ -410,8 +435,8 @@ Segment::print()
 {
     PointList * list = new PointList();
 
-    list->push_back(Point(start.x, start.y, start.z).transform(this));
-    list->push_back(Point(end.x, end.y, end.z).transform(this));
+    list->push_back(Point(start.x, start.y, start.z, 0.0, 0.0).transform(this));
+    list->push_back(Point(end.x, end.y, end.z, 1.0, 1.0).transform(this));
 
     return list;
 }
@@ -473,6 +498,7 @@ Polygon::getOrigin()
             }
         }
     }
+    radius = max_dist;
 }
 
 /**
@@ -484,12 +510,17 @@ Polygon::print()
     PointList::iterator   iter;
     PointList * list = new PointList();
     Point * point;
+    GLdouble tex[2];
 
     /* Calculating the normalized points of the polygon in order to print it. */
     for (iter = pointList.begin(); iter != pointList.end(); iter++) {
         point = *iter;
 
-        list->push_back(Point(point->x, point->y, point->z).transform(this));
+        /* Calculating the texture geometry. */
+        tex[0] = 0.5 * (1 + ((point->x - org[0]) / radius));
+        tex[1] = 0.5 * (1 + ((point->y - org[1]) / radius));
+
+        list->push_back(Point(point->x, point->y, point->z, tex[0], tex[1]).transform(this));
     }
 
     return list;
@@ -534,6 +565,7 @@ EllArc::print()
     GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
     GLfloat vpx, vpy;
     PointList *list = new PointList();
+    GLdouble tex[2];
 
     /* Calculating the initial angle. */
     if (start.x != 0)
@@ -549,7 +581,10 @@ EllArc::print()
         vpx = xMod * cos(ang) + center.x;
         vpy = yMod * sin(ang) + center.y;
 
-        list->push_back(Point(vpx, vpy, center.z).transform(this));
+        tex[0] = 0.5 * cos(ang);
+        tex[1] = 0.5 * sin(ang);
+
+        list->push_back(Point(vpx, vpy, center.z, tex[0], tex[1]).transform(this));
         ang += ang_step;
     }
 

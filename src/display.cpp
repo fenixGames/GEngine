@@ -75,22 +75,18 @@ printFigures(FigureList * list, int winId, Camera * cam, GLuint depth)
     for (iter = list->begin(); iter != list->end(); iter++) {
         pointList = (*iter)->print();
         
-        if ((*iter)->getSolid())
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        else
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-		glColor3d((*iter)->getRed(), (*iter)->getGreen(), (*iter)->getBlue());
-		glBegin((*iter)->getMode());
+        (*iter)->activeMaterial();
+        glBegin((*iter)->getMode());
         for (pointIter = pointList->begin(); pointIter != pointList->end(); pointIter++) {
             dist = depth - cam->getDistance(Point(*(*pointIter)));
             if (dist < 1.0)
                 dist = 1.0;
 			/* Printing the points. */
-			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, 1.0 / dist);
-			
+            glTexCoord2d((*pointIter)->s, (*pointIter)->t);
+			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, 1.0 / dist);	
         }
 		glEnd();
+        (*iter)->deactivateMaterial();
     }
 	delete pointList;
 
@@ -324,8 +320,9 @@ Display::initGL()
 {
     double matrix[16];
 
-    /* Enabling Lighting and depth. */
+    /* Enabling Lighting, textures and depth. */
     glEnable(GL_DEPTH);
+    glEnable(GL_TEXTURE_2D);
 //    glEnable(GL_LIGHTING);
     
     /* Setting the background color. */

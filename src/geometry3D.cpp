@@ -158,6 +158,7 @@ Polyhedron::getPoints(MeshList * meshList)
 	PointList::iterator vit;
 	Point	* temp;
 	unsigned int nedges;
+    GLdouble tex[2] = { 0.0, 0.0 };
 
     pointList = new PointList();
 
@@ -178,8 +179,18 @@ Polyhedron::getPoints(MeshList * meshList)
 	nedges = meshList->size() + vertices.size() - 2;
 	while (!vertices.empty()) {
 		temp = vertices.front();
-		pointList->push_back(new Point(temp->x, temp->y, temp->z));
+		pointList->push_back(new Point(temp->x, temp->y, temp->z, tex[0], tex[1]));
 		vertices.pop_front();
+
+        /* Setting the texture coordinate for the next point. */
+        if (tex[0] == 0.0 && tex[1] == 0.0)
+            tex[0] = 1.0;
+        else if (tex[1] == 0.0)
+            tex[1] = 1.0;
+        else if (tex[0] != 0.0)
+            tex[0] = 0.0;
+        else
+            tex[1] = 0.0;
 	}
 
  	nedges -= pointList->size();
@@ -188,7 +199,7 @@ Polyhedron::getPoints(MeshList * meshList)
 	/* If there are not enough vertices on the printing list, add the first ones again. */
 	while (nedges > 0) {
 		temp = * vit;
-		pointList->push_back(new Point(temp->x, temp->y, temp->z));
+		pointList->push_back(new Point(temp->x, temp->y, temp->z, temp->s, temp->t));
 		vit++;
 		nedges--;
 	}
@@ -256,12 +267,18 @@ Prism::Prism(Point cBase1, Point cBase2, unsigned nsides, double radius)
     unsigned idx, base_idx;
     double angle = 2.0 * M_PI / nsides;
 
+    /* Setting the textures of the center. */
+    for (idx = 0; idx < 2; idx++)
+        centers[idx].s = centers[idx].t = 0.5;
+
     /* Calculating the points of the bases. */
     for (base_idx = 0; base_idx < 2; base_idx++) {
         for (idx = 0; idx < nsides; idx++) {
             point = new Point(centers[base_idx]);
             point->x += radius * cos(angle * idx);
             point->y += radius * sin(angle * idx);
+            point->s = 0.5 * cos(angle);
+            point->t = 0.5 * cos(angle);
             bases[base_idx].push_back(point);
         }
     }
