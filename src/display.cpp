@@ -29,10 +29,12 @@ using namespace GEngine::Geometry;
 int 
 printFigures(FigureList * list, int winId, Camera * cam, GLuint depth)
 {
-    PointList               * pointList;
+    FaceList                * faces;
+    FaceList::iterator      faceIt;
     PointList::iterator     pointIter;
     FigureList::iterator    iter;
 	double					dist;
+    Vector                  camDir = cam->getDirection();
 
     /* If the list is NULL we should draw nothing. */
     if (list == NULL)
@@ -73,22 +75,36 @@ printFigures(FigureList * list, int winId, Camera * cam, GLuint depth)
     cam->activate();
     /* Going through the list of figures. */
     for (iter = list->begin(); iter != list->end(); iter++) {
-        pointList = (*iter)->print();
+        faces = (*iter)->print();
         
         (*iter)->activeMaterial();
-        glBegin((*iter)->getMode());
-        for (pointIter = pointList->begin(); pointIter != pointList->end(); pointIter++) {
-            dist = depth - cam->getDistance(Point(*(*pointIter)));
-            if (dist < 1.0)
-                dist = 1.0;
-			/* Printing the points. */
-            glTexCoord2d((*pointIter)->s, (*pointIter)->t);
-			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, 1.0 / dist);	
+
+        /* Going through each of the faces. */
+        for (faceIt = faces->begin(); faceIt != faces->end(); faceIt++) {
+            glBegin((*iter)->getMode());
+
+            /* Getting if the face is front or back. */
+            if (camDir * (*(*faceIt)->normal) > 0.0) /* FRONT */ {
+                (*faceIt)->vertex->reverse();
+            }
+
+            /* Printing the points. */
+            for (pointIter = (*faceIt)->vertex->begin(); pointIter != (*faceIt)->vertex->end(); pointIter++){
+                dist = depth - cam->getDistance(Point(*(*pointIter)));
+                if (dist == 0.0)
+                    dist = 1.0e-6;
+
+    			/* Printing the points. */
+                glTexCoord2d((*pointIter)->s, (*pointIter)->t);
+//                glVertex3d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z);
+    			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, depth / dist);
+            }
+
+            glEnd();
         }
-		glEnd();
+        delete faces;
         (*iter)->deactivateMaterial();
     }
-	delete pointList;
 
 	cam->deactivate();
     return 0;
@@ -318,11 +334,11 @@ Display::lastFigure()
 void
 Display::initGL()
 {
-    double matrix[16];
-
     /* Enabling Lighting, textures and depth. */
     glEnable(GL_DEPTH);
     glEnable(GL_TEXTURE_2D);
+    glEnable(GL_LINE_SMOOTH);
+    glShadeModel(GL_SMOOTH);
 //    glEnable(GL_LIGHTING);
     
     /* Setting the background color. */
@@ -334,15 +350,10 @@ Display::initGL()
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
-            0.5 * screen[1], 0.0, - (GLdouble) screen[2]);
-    glGetDoublev(GL_PROJECTION_MATRIX, matrix);
-
-    matrix[15] = screen[2];
-
-    glLoadMatrixd(matrix);
+            0.5 * screen[1], -0.5 * screen[2], 0.5 * screen[2]);
 
     /* Setting the sizes of the points and the lines if needed. */
-    glPointSize(4.0f);
+//    glPointSize(4.0f);
     
 }
 

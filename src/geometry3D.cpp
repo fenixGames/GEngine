@@ -97,7 +97,7 @@ Mesh::intersection(Mesh m1, Mesh m2, Mesh m3)
  */
 Polyhedron::Polyhedron(MeshList meshes)
 {
-    mode = GL_TRIANGLE_STRIP;
+    mode = GL_POLYGON;
 
     getPoints(&meshes);
 }
@@ -107,8 +107,6 @@ Polyhedron::Polyhedron(Mesh ** mlist, unsigned int nmeshes)
     MeshList   meshes;
     unsigned int idx;
 
-    pointList = NULL;
-
     /* Check the input. If list is NULL or the number of points is zero, return. */
     if (nmeshes == 0 || mlist == NULL)
         return;
@@ -116,34 +114,26 @@ Polyhedron::Polyhedron(Mesh ** mlist, unsigned int nmeshes)
     for (idx = 0; idx < nmeshes; idx++)
         meshes.push_back(mlist[idx]);
 
-    mode = GL_TRIANGLE_STRIP;
+    mode = GL_POLYGON;
     getPoints(&meshes);
 }
 
-Polyhedron::Polyhedron(PointList list)
+Polyhedron::Polyhedron(FaceList list)
 {
-    PointList::iterator iter;
-
-    pointList = new PointList();
-
-    /* Copying the list of vertices. */
-    for (iter = list.begin(); iter != list.end(); iter++)
-        pointList->push_back(new Point(*(*iter)));
-
-    mode = GL_TRIANGLE_STRIP;
+    faces = FaceList(list);
+    
+    mode = GL_POLYGON;
     getOrigin();
 }
 
-Polyhedron::Polyhedron(Point ** list, unsigned int npoints)
+Polyhedron::Polyhedron(Face ** list, unsigned int npoints)
 {
     unsigned int idx;
 
-    pointList = new PointList();
-
     /* Inserting the list of vertices. */
     for (idx = 0; idx < npoints; idx++)
-        pointList->push_back(new Point(*list[idx]));
-    mode = GL_TRIANGLE_STRIP;
+        faces.push_back(new Face(*list[idx]));
+    mode = GL_POLYGON;
     getOrigin();
 }
 /**
@@ -154,56 +144,27 @@ void
 Polyhedron::getPoints(MeshList * meshList)
 {
 	MeshList::iterator	i1, i2, i3;
-    PointList vertices; /* Set a Vertices list. */
+    PointList vert; /* Set a Vertices list. */
 	PointList::iterator vit;
 	Point	* temp;
-	unsigned int nedges;
-    GLdouble tex[2] = { 0.0, 0.0 };
-
-    pointList = new PointList();
 
     /* Going through the list of meshes and calculating the vertices of the polyhedron. */
 	for (i1 = meshList->begin(); i1 != meshList->end(); i1++) {
-		i2 = i1;
-		for (i2++; i2 != meshList->end(); i2++) {
-			i3 = i2;
-			for (i3++; i3 != meshList->end(); i3++) {
-				temp = Mesh::intersection(*(*i1), *(*i2), *(*i3));
-				if (temp != NULL)
-					vertices.push_back(temp);
+        vert.clear();
+		for (i2 = meshList->begin(); i2 != meshList->end(); i2++) {
+			for (i3 = meshList->begin(); i3 != meshList->end(); i3++) {
+                /* Getting the vertices of the face only if all the meshes are different. */
+                if (i1 != i2 && i1 != i3 && i2 != i3) {
+    				temp = Mesh::intersection(*(*i1), *(*i2), *(*i3));
+	    			if (temp != NULL) {
+		    			vert.push_back(temp);
+                        vertices.push_back(temp);
+                    }
+                }
 			}
 		}
+        faces.push_back(new Face(&vertices, &(*i1)->normal));
 	}
-
-	/* Caculating the number of edges of the figure. */
-	nedges = meshList->size() + vertices.size() - 2;
-	while (!vertices.empty()) {
-		temp = vertices.front();
-		pointList->push_back(new Point(temp->x, temp->y, temp->z, tex[0], tex[1]));
-		vertices.pop_front();
-
-        /* Setting the texture coordinate for the next point. */
-        if (tex[0] == 0.0 && tex[1] == 0.0)
-            tex[0] = 1.0;
-        else if (tex[1] == 0.0)
-            tex[1] = 1.0;
-        else if (tex[0] != 0.0)
-            tex[0] = 0.0;
-        else
-            tex[1] = 0.0;
-	}
-
- 	nedges -= pointList->size();
-	vit = pointList->begin();
-
-	/* If there are not enough vertices on the printing list, add the first ones again. */
-	while (nedges > 0) {
-		temp = * vit;
-		pointList->push_back(new Point(temp->x, temp->y, temp->z, temp->s, temp->t));
-		vit++;
-		nedges--;
-	}
-
     getOrigin();
 }
 
@@ -216,9 +177,9 @@ Polyhedron::getOrigin()
     PointList::iterator ita, itb;
     float dist, max_dist = 0.0;
 
-    for (ita = pointList->begin(); ita != pointList->end(); ita++) {
+    for (ita = vertices.begin(); ita != vertices.end(); ita++) {
         itb = ita;
-        for (itb++; itb != pointList->end(); itb++) {
+        for (itb++; itb != vertices.end(); itb++) {
             dist = Point::distance(*(*ita), *(*itb));
             if (dist > max_dist) {
                 org[0] = ((*ita)->x + (*itb)->x) / 2.0;
@@ -230,27 +191,18 @@ Polyhedron::getOrigin()
 }
 
 /**
- * Destructor of the polyhedron.
- */
-Polyhedron::~Polyhedron()
-{
-	if (pointList != NULL)
-		delete pointList;
-}
-
-/**
  * Prints the polyhedra on the screen by calculating the intersection of three meshes 
  * each time.
  */
-PointList *
+FaceList *
 Polyhedron::print()
 {
-    PointList * printing = new PointList();
-    PointList::iterator iter;
+    FaceList * printing = new FaceList();
+    FaceList::iterator iter;
 
     /* Going through the list of points and copy them into the new list. */
-    for (iter = pointList->begin(); iter != pointList->end(); iter++) {
-        printing->push_back((*iter)->transform(this));
+    for (iter = faces.begin(); iter != faces.end(); iter++) {
+        printing->push_back((*iter)->transform(org, angle));
     }
 
     return printing;
@@ -261,12 +213,17 @@ Polyhedron::print()
  */
 Prism::Prism(Point cBase1, Point cBase2, unsigned nsides, double radius)
 {
-    PointList bases[2];
-    PointList::iterator * iter, bIter[2];
+    PointList bases[2], pointList, * current;
     Point   * point, centers[2] = {cBase1, cBase2};
     unsigned idx, base_idx;
     double angle = 2.0 * M_PI / nsides;
+    Vector dir(3, 0.0, 0.0, 1.0), ** walls;
 
+    /* Allocate space for the vectors of the walls. */
+    walls = (Vector **) malloc(nsides * sizeof(Vector *));
+    if (walls == NULL)
+        return;
+    
     /* Setting the textures of the center. */
     for (idx = 0; idx < 2; idx++)
         centers[idx].s = centers[idx].t = 0.5;
@@ -280,53 +237,54 @@ Prism::Prism(Point cBase1, Point cBase2, unsigned nsides, double radius)
             point->s = 0.5 * cos(angle);
             point->t = 0.5 * cos(angle);
             bases[base_idx].push_back(point);
+
+            /* Calculate the normal to the face using the angle. */
+            walls[idx] = new Vector(3, cos(angle), sin(angle), 0.0);
         }
     }
 
-    /* Getting the points of the prism as follows:
-     *  -   First, the points of the first base.
-     *  -   Second, the points of the walls.
-     *  -   Last, the points of the second base.
+    /* Getting the faces of the prism as follows:
+     *  -   First, the bases.
+     *  -   Second, the faces of the walls.
      */
-    idx = 0;
-    pointList = new PointList();
 
     /* First base. */
-    getBasePoints(&bases[0], centers[0]);
+    faces.push_back(new Face(&bases[0], &dir));
+    dir = dir * -1.0;
     
-    /* Walls. */
-    bIter[0] = bases[0].begin(); bIter[1] = bases[1].begin(); idx = 0;
-    while (bIter[1] != bases[1].end()) {
-        iter = &bIter[idx % 2];
-        pointList->push_back(new Point(*(*(*iter))));
-        (*iter)++;
-        idx++;
-    }
-    //pointList->push_back(new Point(*bases[0].front()));
-
     /* Second base. */
-    getBasePoints(&bases[1], centers[1]);
-    mode = GL_TRIANGLE_STRIP;
-}
+    faces.push_back(new Face(&bases[0], &dir));
+    
 
-/**
- * Gets the points of the base.
- * @param   PointList   *base   The base with the vertices.
- * @param   Point       center  The center of the base.
- */
-void
-Prism::getBasePoints(PointList *base, Point center)
-{
-    unsigned idx, nsides = base->size();
-    PointList::iterator  iter;
+    bases[0].push_back(new Point(*bases[0].front()));
+    bases[1].push_back(new Point(*bases[1].front()));
 
-    idx = 0;
-    for(iter = base->begin(); iter != base->end(); iter++){
-        if (idx % 3 == 2 && nsides != 3) {
-            pointList->push_back(new Point(center));
-            idx++;
+    /* Walls. */
+    for (idx = 0; idx < nsides; idx++) {
+        /* Clear the list of points. */
+        pointList.clear();
+
+        /* Get the points. */
+        for (base_idx = 0; base_idx < 2; base_idx++) {
+            current = &bases[base_idx];
+            point = new Point(*current->front());
+
+            current->pop_front();
+            if (base_idx == 0) {
+                pointList.push_back(point);
+                pointList.push_back(new Point(*current->front()));
+            } else {
+                pointList.push_back(new Point(*current->front()));
+                pointList.push_back(point);
+            }
         }
-        pointList->push_back(new Point(*(*iter)));
-        idx++;
+        faces.push_back(new Face(&pointList, walls[idx]));
     }
+
+    mode = GL_POLYGON;
+
+    for (idx = 0; idx < nsides; idx++)
+        delete walls[idx];
+    free(walls);
 }
+

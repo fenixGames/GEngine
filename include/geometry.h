@@ -17,6 +17,7 @@
 
 #define PointList 	std::list<Point *>
 #define MeshList	std::list<Mesh *>
+#define FaceList    std::list<Face *>
 
 /* The following declarations are needed for the Figure part. */
 
@@ -25,6 +26,7 @@ namespace GEngine {
     namespace Geometry {
         class Figure;
         class StaticFigure;
+        class Face;
         class Point;
         class Arc;
         class Sector;
@@ -61,6 +63,7 @@ class GEngine::Geometry::Figure {
 		GLenum	mode;	/* Indicates the mode to use to print. */
 		GLfloat	angle[3];	/* The angles used in the rotation (yaw, pitch, roll). */
         Material * material; /* The texture asociated to the figure. Could be a color or NULL. */
+        PointList vertices; /* The list of vertices for the figure. */
     public:
 		int		org[3];		/* The local origin of coordinates for the figure. */
 	
@@ -68,7 +71,7 @@ class GEngine::Geometry::Figure {
 		Figure(const Figure& fig);
 
         /* Virtual functions needed to be overriden. */
-        virtual PointList * print() = 0; 
+        virtual FaceList * print() = 0; 
         virtual void motion(int time) = 0;
 
         /* By default, all the figures are wired figures, with this, they will be solid. */
@@ -103,6 +106,22 @@ class GEngine::Geometry::StaticFigure : public GEngine::Geometry::Figure {
 };
 
 /**
+ * The face of a figure, defined as a list of points and a vector.
+ */
+class GEngine::Geometry::Face {
+    public:
+        PointList   * vertex;
+        Vector      * normal;
+
+        /* Creates a new face using the list of points an the normal vector. */
+        Face(PointList * list, Vector * normal);
+        ~Face();
+
+        /* Applies the transformations to the face. */
+        Face * transform(GLint center[3], GLfloat angles[3]);
+};
+
+/**
  * The class used to print a 2D point.
  */
 class GEngine::Geometry::Point  {
@@ -123,9 +142,6 @@ class GEngine::Geometry::Point  {
         /* Calculates the distance between two points. */
         static float distance(Point p1, Point p2);
 
-		/* Transforms the point locally. */
-        Point * transform(Figure * ptr);
-
         /* Calculates the point between another two using a time parameter. */
         static Point * tween(const Point p1, const Point p2, double time);
 };
@@ -134,11 +150,6 @@ class GEngine::Geometry::Point  {
  * The class used to print an arc.
  */
 class GEngine::Geometry::Arc : public GEngine::Geometry::StaticFigure {
-    protected:
-        Point center; /* The point associated to the center of the arc. */
-        Point start;  /* The starting point of the arc. */
-        GLfloat angle;  /* The angle associated to the arc. */
-
     public:
         Arc(Point c, Point s, GLfloat a = 360.0f);
 
@@ -146,7 +157,7 @@ class GEngine::Geometry::Arc : public GEngine::Geometry::StaticFigure {
         Point * getEnd();
 
         /* Prints the arc. */
-        virtual PointList * print();
+        virtual FaceList * print();
 };
 
 /**
@@ -155,9 +166,6 @@ class GEngine::Geometry::Arc : public GEngine::Geometry::StaticFigure {
 class GEngine::Geometry::Sector : public GEngine::Geometry::Arc {
     public:
         Sector(Point c, Point s, GLfloat a = 360.0f);
-
-        /* Prints the sector. */
-        PointList * print();
 };
 
 /**
@@ -179,7 +187,7 @@ class GEngine::Geometry::Segment : public GEngine::Geometry::StaticFigure {
         Segment(Point sp, Point ep);
 
         /* Prints the segment on the screen. */
-        PointList * print();
+        FaceList * print();
 };
 
 /**
@@ -189,15 +197,13 @@ class GEngine::Geometry::Polygon : public GEngine::Geometry::StaticFigure {
     private:
         void getOrigin();
         float radius;
-    protected:
-        PointList pointList;  /* The list of points associated to the polygon. */
     public:
         /* There are two ways of create the Polygon, though a list of points or through an array. */
         Polygon(PointList list);
         Polygon(const Point ** list = NULL, int number = 0);
 
         /* Prints the polygon on the screen. */
-        virtual PointList * print();
+        virtual FaceList * print();
 };
 
 /**
@@ -208,18 +214,12 @@ class GEngine::Geometry::Polygon : public GEngine::Geometry::StaticFigure {
  *  y = yMod * sin(ang);
  */
 class GEngine::Geometry::EllArc : public GEngine::Geometry::StaticFigure {
-    protected:
-        Point   center, /* The center of the associated ellipse. */
-                start;  /* The starting point used to draw the ellipse. */
-        GLfloat xMod,   /* The modifier of the X component of the ellipse. */
-                yMod;   /* The modifier of the Y component of the ellipse. */
-        GLfloat angle;  /* The angle of the arc to be drawn. */
     public:
         EllArc(Point center, Point start,
                 GLfloat a, GLfloat b, GLfloat angle = 360.0f);
 
         /* Prints the ellipsoidal arc on the screen. */
-        PointList * print();
+        FaceList * print();
 
 		/* Gets the ending point of the ellipsoidal arc. */
 		Point * getEnd();
@@ -256,10 +256,10 @@ class GEngine::Geometry::Rectangle : public GEngine::Geometry::Polygon {
 };
 
 class GEngine::Geometry::Mesh {
-	protected:
+	public:
 		Vector	normal;
 		Point	point;
-	public:
+
 		Mesh(Vector vect, Point v);
 		Mesh(const Mesh& mesh);
 		Mesh(Point points[3]);
@@ -276,24 +276,21 @@ class GEngine::Geometry::Polyhedron : public GEngine::Geometry::StaticFigure {
         void getPoints(MeshList * list);
     protected:
         void getOrigin();
-        PointList   * pointList;
+        FaceList faces;
     public:
         Polyhedron(MeshList list);
-        Polyhedron(PointList list);
-        Polyhedron(Point ** list, unsigned int npoints);
+        Polyhedron(FaceList list);
+        Polyhedron(Face ** list, unsigned int nfaces);
         Polyhedron(Mesh ** list = NULL, unsigned int nmeshes = 0);
-		~Polyhedron();
 
         /* Prints the polyhedra on the screen. */
-        virtual PointList * print();
+        virtual FaceList * print();
 };
 
 /**
  * Defining a prism.
  */
 class GEngine::Geometry::Prism : public GEngine::Geometry::Polyhedron {
-    private:
-        void getBasePoints(PointList * base, Point center);
     public:
         /* Constructor of a prism using bases that are polygons of nsides edges. */
         Prism(Point cBase1, Point cBase2, unsigned nsides, double radius);

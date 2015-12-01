@@ -161,6 +161,14 @@ Vector::operator = (Vector vect)
 }
 
 /**
+ * An alias for getElement.
+ */
+double
+Vector::operator [] (unsigned int index) {
+    return getElement(index);
+}
+
+/**
  * Gets the element at the position indicated by the index.
  *
  * @param	unsigned	index	The index of the element to be retrieved.

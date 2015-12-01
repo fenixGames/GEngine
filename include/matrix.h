@@ -40,6 +40,9 @@ class Vector {
 		/* Asignates the same values to another vector. */
 		Vector operator = (Vector vect);
 
+        /* The same as getElement. */
+        double operator [] (unsigned int i);
+
 		/* Gets/Sets the element at position i. */
 		double getElement(unsigned int i);
         void setElement(unsigned int i, double value);

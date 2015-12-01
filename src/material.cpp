@@ -81,6 +81,9 @@ Material::Material(GEmaterial t, void * data)
 
 	/* Setting a copy of the default properties for this texture. */
 	properties = TextureMap(*defaults);
+
+    /* Generating the texture pointer. */
+	glGenTextures(1, &buffer);
 }
 
 /**
@@ -90,6 +93,7 @@ Material::~Material()
 {
 	if (texture.data != NULL)
 		free( texture.data );
+    glDeleteTextures(1, &buffer);
 }
 
 /**
@@ -105,7 +109,7 @@ Material::readBmpFile(const char * filename)
 
 	/* Initialize the structure. */
 	texture.data = NULL;
-
+                 
 	/* Open the bmp file. */
 	file = fopen(filename, "rb");
 	if (file == NULL)
@@ -156,10 +160,16 @@ Material::activate()
         return;
     }
 
-	glGenTextures(1, &buffer);
 	glBindTexture(GL_TEXTURE_2D, buffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.width, texture.height,
-			0, GL_RGB, GL_UNSIGNED_BYTE, texture.data);
+			0, GL_BGR, GL_UNSIGNED_BYTE, texture.data);
+
+#ifdef DEBUG
+    printf("texture = ");
+    for (int idx = 0; idx < 3 * texture.width * texture.height; idx++)
+        printf("%2.2hhx ", texture.data[idx]);
+    printf("\n");
+#endif
 
 	/* Setting the properties of the object. */
 	for (props = properties.begin(); props != properties.end(); props++) {
@@ -174,9 +184,6 @@ void
 Material::deactivate()
 {
 	TextureMap::iterator props;
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDeleteTextures(1, &buffer);
 
 	/* Setting the properties to the default ones. */
 	for (props = defaults->begin(); props != defaults->end(); props++) {

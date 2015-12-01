@@ -17,6 +17,7 @@ namespace GEngine {
     namespace Geometry {
         class Figure;
         class StaticFigure;
+        class Face;
         class Point;
         class Arc;
         class Sector;
@@ -41,8 +42,10 @@ namespace GEngine {
         class Toroid;
     };
     class Material;
+    class Light;
 }
 #include "geometry.h"
 #include "display.h"
+#include "light.h"
 
 #endif

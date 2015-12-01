@@ -130,8 +130,7 @@ Figure::activeMaterial()
 {
     /* Check if the material is set or not. */
     if (material != NULL) {
-        glPolygonMode(GL_FRONT, GL_FILL);
-        glPolygonMode(GL_BACK, GL_POINT);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         material->activate();
     } else if (solid) {
         glPolygonMode(GL_FRONT, GL_LINE);
@@ -176,6 +175,63 @@ StaticFigure::motion(int time_stamp)
 }
 
 /**
+ * Constructor of the face.
+ */
+Face::Face(PointList * list, Vector * n)
+{
+    vertex = new PointList( *list);
+    normal = new Vector(*n);
+}
+
+/**
+ * Destructor.
+ */
+Face::~Face()
+{
+    delete vertex;
+    delete normal;
+}
+
+/**
+ * Applies the transformations to the face and returns the new one.
+ * @param GLint     center[3]   The center of the face.
+ * @param GLfloat   angles[3]   The angles of rotation.
+ * @return  The new face.
+ */
+Face *
+Face::transform(GLint center[3], GLfloat angles[3])
+{
+    PointList::iterator     iter;
+    PointList   newVert;
+    Vector  in, out;
+    Matrix  roll(3, 3,
+                    cos(angles[0]), -sin(angles[0]), 0.0,
+                    sin(angles[0]), cos(angles[0]), 0.0,
+                    0.0, 0.0, 1.0),
+            pitch(3, 3,
+                    cos(angles[1]), 0.0, sin(angles[1]),
+                    0.0, 1.0, 0.0,
+                    -sin(angles[1]), 0.0, cos(angles[1])),
+            yaw(3, 3,
+                    1.0, 0.0, 0.0,
+                    0.0, cos(angles[2]), -sin(angles[2]),
+                    0.0, sin(angles[2]), cos(angles[2])), rotation;
+
+    /* Setting the rotation matrix. */
+    rotation = roll * yaw * pitch;
+
+    /* Going through all the points of the face. */
+    for (iter = vertex->begin(); iter != vertex->end(); iter++) {
+        in = Vector(3, (*iter)->x, (*iter)->y, (*iter)->z);
+        out = rotation * in;
+
+        newVert.push_back(new Point(out[0], out[1], out[2], (*iter)->s, (*iter)->t));
+    }
+    out = rotation * (*normal);
+
+    return new Face(&newVert, &out);
+}
+/**
  * Constructor of the 2D Point class.
  *
  * @param   GLint   xx  The horizontal component of the point.
@@ -188,41 +244,6 @@ Point::Point(GLdouble xx, GLdouble yy, GLdouble zz, GLdouble ss, GLdouble tt)
     z = zz;
     s = ss;
     t = tt;
-}
-
-/**
- * Transforms the point locally and returns the result.
- *
- * @return	The transformed point.
- */
-Point *
-Point::transform(Figure * ptr)
-{
-	Point * end;
-    GLfloat * angle = ptr->angle;
-    Vector in(3, x - ptr->org[0], y - ptr->org[1], z - ptr->org[2]),
-           out(3, 0.0, 0.0, 0.0);
-    /* The three rotational matrix, starting for roll. */
-    Matrix roll(3, 3, 
-            cos(angle[0]), -sin(angle[0]), 0.0, 
-            sin(angle[0]), cos(angle[0]), 0.0, 
-            0.0, 0.0, 1.0),
-           pitch(3, 3,
-                   cos(angle[1]), 0.0, sin(angle[1]),
-                   0.0, 1.0, 0.0,
-                   -sin(angle[1]), 0.0, cos(angle[1])),
-           yaw(3, 3,
-                   1.0, 0.0, 0.0,
-                   0.0, cos(angle[2]), -sin(angle[2]),
-                   0.0, sin(angle[2]), cos(angle[2])), rotation = Matrix::identity(3);
-
-    rotation = roll * pitch * yaw;
-
-    out = rotation * in;
-
-    end = new Point(out.getElement(0) + ptr->org[0], out.getElement(1) + ptr->org[1],
-            out.getElement(2) + ptr->org[2]);
-	return end;
 }
 
 /**
@@ -291,56 +312,60 @@ Point::tween(const Point p1, const Point p2, double time)
 /**
  * Contructor of the arc class.
  * @param   Point2D     c   The center of the circunference associated to the arc.
- * @param   Point2D     s   The start point of the arc.
  * @param   GLfloat     a   The angle of the arc.
  */
 Arc::Arc(Point c, Point s, GLfloat a)
 {
-    center = c;
-    start = s;
-    angle = a;
- 
+    GLfloat ang_step = PI / POINT_PREC, ang, end_angle;
+    GLfloat rad = Point::distance(s, c);
+    GLfloat vpx, vpy;
+
+    /* Setting the center. */
 	org[0] = c.x;
 	org[1] = c.y;
     org[2] = c.z;
+
     /* The angle must be defined between 0 and 2 * PI, so we calculate the equivalent one. */
-    while (angle > 360.0f)
-        angle -= 360.0f;
+    while (a > 360.0f)
+        a -= 360.0f;
 
-    while (angle < 0)
-        angle += 360.0f;
+    while (a < 0)
+        a += 360.0f;
 
-	if (angle == 360.0f)
+	if (a == 360.0f)
 		mode = GL_POLYGON;
+
+    /* Calculating the initial angle. */
+    if (s.x != 0)
+        ang = atan(s.y / s.x);
+    else if (s.y > 0)
+        ang = PI / 2;
+    else
+        ang = 3 * PI / 2;
+
+    end_angle = (a * M_PI / 180.0f) + ang ;
+    /* Calculating and printing the required points. */
+    while (ang < end_angle) {
+        vpx = rad * cos(ang) + c.x;
+        vpy = rad * sin(ang) + c.y;
+
+	   	vertices.push_back(new Point(vpx, vpy, c.z, 0.5 * cos(ang), 0.5 * sin(ang)));
+        ang += ang_step;
+    }
+
 }
 
 /**
  * Prints the arc on the screen, after converting each point, of course.
  */
-PointList *
-Arc::print() {
-    GLfloat ang_step = PI / POINT_PREC, ang, end_angle;
-    GLfloat rad = Point::distance(start, center);
-    GLfloat vpx, vpy;
-    PointList * list = new PointList();
+FaceList *
+Arc::print()
+{
+    Vector dir(3, 0.0, 0.0, 1.0);
+    FaceList * list = new FaceList();
 
-    /* Calculating the initial angle. */
-    if (start.x != 0)
-        ang = atan(start.y / start.x);
-    else if (start.y > 0)
-        ang = PI / 2;
-    else
-        ang = 3 * PI / 2;
+    list->push_back(Face(&vertices, &dir).transform(org, angle));
 
-    end_angle = (angle * M_PI / 180.0f) + ang ;
-    /* Calculating and printing the required points. */
-    while (ang < end_angle) {
-        vpx = rad * cos(ang) + center.x;
-        vpy = rad * sin(ang) + center.y;
-
-	   	list->push_back(Point(vpx, vpy, center.z, 0.5 * cos(angle), 0.5 * sin(angle)).transform(this));
-        ang += ang_step;
-    }
     return list;
 }
 
@@ -352,29 +377,7 @@ Arc::print() {
 Point *
 Arc::getEnd()
 {
-    GLfloat radius, /* The radius of the circunference of the Arc. */
-            sangle; /* The starting angle of the arc. */
-    Point * end;
-    GLint   x, y;
-
-    /* Getting the radius of the arc. */
-    radius = Point::distance(start, center);
-
-    /* Getting the initial angle. */
-    if (start.x != 0)
-        sangle = atan(start.y / start.x);
-    else if (start.y > 0)
-        sangle = PI / 2;
-    else
-        sangle = 3 * PI / 2;
-
-    /* Getting the coordinates of the new point. */
-    x = center.x + radius * cos(sangle + (angle * PI / 180.0f));
-    y = center.y + radius * sin(sangle + (angle * PI / 180.0f));
-
-    end = new Point(x, y, center.z);
-
-    return end;
+    return new Point(*vertices.back());
 }
 
 /** 
@@ -383,25 +386,8 @@ Arc::getEnd()
 Sector::Sector(Point c, Point s, GLfloat a) : Arc(c, s, a)
 {
 	mode = GL_POLYGON;
+    vertices.push_back(new Point(c.x, c.y, c.z, 0.5, 0.5));
 }
-
-/**
- * Prints the sector on the screen.
- */
-PointList *
-Sector::print()
-{
-    PointList * list;
-
-    /* Making the arc for the sector. */
-    Arc   arc(center,  start, angle);
-
-    list = arc.print();
-    list->push_front(Point(center.x, center.y, center.z, 0.5, 0.5).transform(this));
-
-    return list;
-}
-
 
 /**
  * Constructor of the circuference, which is an extension of an arc.
@@ -425,18 +411,21 @@ Segment::Segment(Point sp, Point ep)
 	org[0] = (sp.x + ep.x) / 2.0;
 	org[1] = (sp.y + ep.y) / 2.0;
     org[2] = (sp.z + ep.z) / 2.0;
+    
+    vertices.push_back(new Point(start.x, start.y, start.z, 0.0, 0.0));
+    vertices.push_back(new Point(end.x, end.y, end.z, 1.0, 1.0));
 }
 
 /**
  * Prints the segment on the screen.
  */
-PointList *
+FaceList *
 Segment::print()
 {
-    PointList * list = new PointList();
+    FaceList * list = new FaceList();
+    Vector dir(3, 0.0, 0.0, 1.0);
 
-    list->push_back(Point(start.x, start.y, start.z, 0.0, 0.0).transform(this));
-    list->push_back(Point(end.x, end.y, end.z, 1.0, 1.0).transform(this));
+    list->push_back(Face(&vertices, &dir).transform(org, angle));
 
     return list;
 }
@@ -451,7 +440,7 @@ Polygon::Polygon(PointList list)
     PointList::iterator   iter;
 
     for (iter = list.begin(); iter != list.end(); iter++)
-        pointList.push_back(*iter);
+        vertices.push_back(*iter);
 	mode = GL_POLYGON;
 
     getOrigin();
@@ -468,7 +457,7 @@ Polygon::Polygon(const Point ** list, int number)
     int idx;
 
     for (idx = 0; idx < number; idx++)
-        pointList.push_back((Point *)list[idx]);
+        vertices.push_back((Point *)list[idx]);
 	mode = GL_POLYGON;
 
     getOrigin();
@@ -485,9 +474,9 @@ Polygon::getOrigin()
 
     /* Looking for the maximal distance between points, which will generate the diameter 
      * of the polygon. */
-    for (ita = pointList.begin(); ita != pointList.end(); ita++) {
+    for (ita = vertices.begin(); ita != vertices.end(); ita++) {
         itb = ita;
-        for (itb++; itb != pointList.end(); itb++) {
+        for (itb++; itb != vertices.end(); itb++) {
             dist = Point::distance(*(*ita), *(*itb));
             if (dist > max_dist) {
                 /* Setting the origin. */
@@ -504,25 +493,13 @@ Polygon::getOrigin()
 /**
  * Prints the polygon on the screen.
  */
-PointList *
+FaceList *
 Polygon::print()
 {
-    PointList::iterator   iter;
-    PointList * list = new PointList();
-    Point * point;
-    GLdouble tex[2];
+    FaceList * list = new FaceList();
+    Vector dir(3, 0.0, 0.0, 1.0);
 
-    /* Calculating the normalized points of the polygon in order to print it. */
-    for (iter = pointList.begin(); iter != pointList.end(); iter++) {
-        point = *iter;
-
-        /* Calculating the texture geometry. */
-        tex[0] = 0.5 * (1 + ((point->x - org[0]) / radius));
-        tex[1] = 0.5 * (1 + ((point->y - org[1]) / radius));
-
-        list->push_back(Point(point->x, point->y, point->z, tex[0], tex[1]).transform(this));
-    }
-
+    list->push_back(Face(&vertices, &dir).transform(org, angle));
     return list;
 }
 
@@ -537,56 +514,56 @@ Polygon::print()
  */
 EllArc::EllArc(Point cen, Point st, GLfloat a, GLfloat b, GLfloat ang)
 {
-    center = cen;
-    start = st;
-    xMod = a;
-    yMod = b;
-    angle = ang;
-	org[0] = cen.x;
+    GLfloat ang_step = PI / POINT_PREC, _ang, end_ang;
+    GLfloat vpx, vpy;
+    GLdouble tex[2];
+    
+    /* Sanitizing the angle. */
+    while (ang > 360.0f)
+        ang -= 360.0f;
+    while (ang < 0)
+        ang += 360.0f;
+
+
+    /* Calculating the initial angle. */
+    if (st.x != 0)
+        _ang = atan(st.y / st.x);
+    else if (st.y > 0)
+        _ang = PI / 2.0f;
+    else
+        _ang = 1.5f * PI;
+	end_ang = ang * PI / 180.0f + _ang;
+
+    /* Calculating the points and printing them. */
+    while (_ang < end_ang) {
+        vpx = a * cos(_ang) + cen.x;
+        vpy = b * sin(_ang) + cen.y;
+
+        tex[0] = 0.5 * cos(_ang);
+        tex[1] = 0.5 * sin(_ang);
+
+        vertices.push_back(new Point(vpx, vpy, cen.z, tex[0], tex[1]));
+        _ang += ang_step;
+    }
+
+    org[0] = cen.x;
 	org[1] = cen.y;
     org[2] = cen.z;
 
-    /* Sanitizing the angle. */
-    while (angle > 360.0f)
-        angle -= 360.0f;
-    while (angle < 0)
-        angle += 360.0f;
-
-	if (angle == 360.0f)
+    if (ang == 360.0f)
 		mode = GL_POLYGON;
 }
 
 /**
  * Prints the ellipse on the screen.
  */
-PointList *
+FaceList *
 EllArc::print()
 {
-    GLfloat ang_step = PI / POINT_PREC, ang, end_ang;
-    GLfloat vpx, vpy;
-    PointList *list = new PointList();
-    GLdouble tex[2];
-
-    /* Calculating the initial angle. */
-    if (start.x != 0)
-        ang = atan(start.y / start.x);
-    else if (start.y > 0)
-        ang = PI / 2.0f;
-    else
-        ang = 1.5f * PI;
-	end_ang = angle * PI / 180.0f + ang;
-
-    /* Calculating the points and printing them. */
-    while (ang < end_ang) {
-        vpx = xMod * cos(ang) + center.x;
-        vpy = yMod * sin(ang) + center.y;
-
-        tex[0] = 0.5 * cos(ang);
-        tex[1] = 0.5 * sin(ang);
-
-        list->push_back(Point(vpx, vpy, center.z, tex[0], tex[1]).transform(this));
-        ang += ang_step;
-    }
+    FaceList *list = new FaceList();
+    Vector dir(3, 0.0, 0.0, 1.0);
+    
+    list->push_back(Face(&vertices, &dir).transform(org, angle));
 
     return list;
 }
@@ -599,22 +576,7 @@ EllArc::print()
 Point *
 EllArc::getEnd()
 {
-	GLfloat sangle; /* The starting angle. */
-	GLfloat xcomp, ycomp;
-
-	/* Calculating the starting angle */
-	if (start.x != 0)
-		sangle = atan(start.y / start.x);
-	else if (start.y > 0)
-		sangle = PI / 2;
-	else
-		sangle = 1.5 * PI;
-
-	/* Getting the coordinates. */
-	xcomp = xMod * cos( sangle + (angle * PI / 180.0f)) + center.x;
-	ycomp = yMod * sin( sangle + (angle * PI / 180.0f)) + center.y;
-
-	return new Point(xcomp, ycomp, center.z);
+	return new Point(*vertices.back());
 }
 
 /**
@@ -643,10 +605,13 @@ RegPol::RegPol(Point center, unsigned int sides, GLint rad)
 	ang_step = 360.0f / sides;
 
 	for (idx = 0; idx < sides; idx++) {
-		pointList.push_back(
+		vertices.push_back(
 				new Point(
 					center.x + rad * cos(idx * ang_step * PI / 180.0f),
-				   	center.y + rad * sin(idx * ang_step * PI / 180.0f)
+				   	center.y + rad * sin(idx * ang_step * PI / 180.0f),
+                    center.z,
+                    0.5 * cos(idx * ang_step * PI / 180.0f),
+                    0.5 * sin(idx * ang_step * PI / 180.0f)
 					)
 				);
 	}
@@ -665,10 +630,10 @@ RegPol::RegPol(Point center, unsigned int sides, GLint rad)
  */
 Rectangle::Rectangle(Point p1, Point p2)
 {
-	pointList.push_back(new Point(p1.x, p1.y));
-	pointList.push_back(new Point(p1.x, p2.y));
-	pointList.push_back(new Point(p2.x, p2.y));
-	pointList.push_back(new Point(p2.x, p1.y));
+	vertices.push_back(new Point(p1.x, p1.y));
+	vertices.push_back(new Point(p1.x, p2.y));
+	vertices.push_back(new Point(p2.x, p2.y));
+	vertices.push_back(new Point(p2.x, p1.y));
 
     org[0] = (p1.x + p2.x) / 2.0;
     org[1] = (p1.y + p2.y) / 2.0;

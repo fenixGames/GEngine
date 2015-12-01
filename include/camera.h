@@ -29,7 +29,6 @@ class GEngine::Camera {
     protected:
         Geometry::Point       position;   /* The position of the camera in the space. */
         double      yaw, pitch, roll;   /* The inclination of the camera in the three axis. */
-        double      matrix[16];
     public:
         /* Constructor, initial to the origin. */
         Camera(Geometry::Point initial = Geometry::Point(), double yaw = 0.0, double pitch = 0.0, double roll = 0.0);
@@ -51,6 +50,9 @@ class GEngine::Camera {
 
         /* Get the distance of the point to the camera. */
         double getDistance(Geometry::Point p);
+
+        /* Get direction. */
+        Vector getDirection();
 };
 
 /**
