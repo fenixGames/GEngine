@@ -33,7 +33,6 @@ printFigures(FigureList * list, int winId, Camera * cam, GLuint depth)
     FaceList::iterator      faceIt;
     PointList::iterator     pointIter;
     FigureList::iterator    iter;
-	double					dist;
     Vector                  camDir = cam->getDirection();
 
     /* If the list is NULL we should draw nothing. */
@@ -90,14 +89,9 @@ printFigures(FigureList * list, int winId, Camera * cam, GLuint depth)
 
             /* Printing the points. */
             for (pointIter = (*faceIt)->vertex->begin(); pointIter != (*faceIt)->vertex->end(); pointIter++){
-                dist = depth - cam->getDistance(Point(*(*pointIter)));
-                if (dist == 0.0)
-                    dist = 1.0e-6;
-
     			/* Printing the points. */
                 glTexCoord2d((*pointIter)->s, (*pointIter)->t);
-//                glVertex3d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z);
-    			glVertex4d((*pointIter)->x, (*pointIter)->y, (*pointIter)->z, depth / dist);
+                glVertex3d((*pointIter)->x, (*pointIter)->y, - (*pointIter)->z);
             }
 
             glEnd();
@@ -349,8 +343,13 @@ Display::initGL()
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+
+    /* Use orthographic view until we build the world class and define where the camera will be. */
+/*    glFrustum(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
+            0.5 * screen[1], 0.5 * screen[2], 1.0 * screen[2]);
+*/
     glOrtho(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
-            0.5 * screen[1], -0.5 * screen[2], 0.5 * screen[2]);
+            0.5 * screen[1], 0.001 * screen[2], 1.0 * screen[2]);
 
     /* Setting the sizes of the points and the lines if needed. */
 //    glPointSize(4.0f);
