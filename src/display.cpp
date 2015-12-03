@@ -16,94 +16,6 @@
 using namespace GEngine;
 using namespace GEngine::Geometry;
 
-/** 
- * The function used to print figures on the screen.
- *
- * @param FigureList    * list  The list of figures to draw.
- * @param int           winId   The id of the window where to draw the points.
- * @param Camera        * cam   The camera which records the scene.
- * @param GLuint        depth   The depth of the scene.
- *
- * @return Returns 0 on success or the error code on failure.
- */
-int 
-printFigures(FigureList * list, int winId, Camera * cam, GLuint depth)
-{
-    FaceList                * faces;
-    FaceList::iterator      faceIt;
-    PointList::iterator     pointIter;
-    FigureList::iterator    iter;
-    Vector                  camDir = cam->getDirection();
-
-    /* If the list is NULL we should draw nothing. */
-    if (list == NULL)
-        return 0;
-
-    /* If there is no camera, nothing must be shown. */
-    if (cam == NULL)
-        return 0;
-
-#ifdef DEBUG
-    StaticCamera axiscam(*cam);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    axiscam.move(Point());
-
-    axiscam.activate();
-	glBegin(GL_LINES);
-    glColor3d( 1.0, 0.0, 0.0);
-    glVertex3d(-1.0, 0.0, 0.0);
-    glVertex3d( 1.0, 0.0, 0.0);
-    
-    glColor3d(0.0, 1.0, 0.0);
-    glVertex3d(0.0, -1.0, 0.0);
-    glVertex3d(0.0,  1.0, 0.0);
-    
-    glColor3d(0.0, 0.0, 1.0);
-    glVertex3d(0.0, 0.0, -1.0);
-    glVertex3d(0.0, 0.0, 1.0);
-    glEnd();
-
-    axiscam.deactivate();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-#endif
-
-    cam->activate();
-    /* Going through the list of figures. */
-    for (iter = list->begin(); iter != list->end(); iter++) {
-        faces = (*iter)->print();
-        
-        (*iter)->activeMaterial();
-
-        /* Going through each of the faces. */
-        for (faceIt = faces->begin(); faceIt != faces->end(); faceIt++) {
-            glBegin((*iter)->getMode());
-
-            /* Getting if the face is front or back. */
-            if (camDir * (*(*faceIt)->normal) > 0.0) /* FRONT */ {
-                (*faceIt)->vertex->reverse();
-            }
-
-            /* Printing the points. */
-            for (pointIter = (*faceIt)->vertex->begin(); pointIter != (*faceIt)->vertex->end(); pointIter++){
-    			/* Printing the points. */
-                glTexCoord2d((*pointIter)->s, (*pointIter)->t);
-                glVertex3d((*pointIter)->x, (*pointIter)->y, - (*pointIter)->z);
-            }
-
-            glEnd();
-        }
-        delete faces;
-        (*iter)->deactivateMaterial();
-    }
-
-	cam->deactivate();
-    return 0;
-}
-
 /**
  * Inititializes the display class and the main window's size and position.
  *
@@ -134,13 +46,7 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
     /* Initializing the title of the window to NULL. */
     title = NULL;
 
-    /* Initializing the lists of figures to NULL. */
-    figures = NULL;
-
-    /* Initializing the camera to NULL. */
-    camera = NULL;
-
-	if (theDisplay == NULL) {
+    if (theDisplay == NULL) {
 		/* OS initialization. */
         displayInit();
 
@@ -155,8 +61,6 @@ Display::~Display()
 {
 	if (title != NULL)
 		free(title);
-	if (figures != NULL)
-		delete figures;
 }
 
 /**
@@ -172,7 +76,9 @@ Display::displayFunc()
     glColor3f(theDisplay->fgcolor[0], theDisplay->fgcolor[1], theDisplay->fgcolor[2]);
 
     /* Prints the figures of the list. */
-    printFigures(theDisplay->figures, theDisplay->mainWin, theDisplay->camera, theDisplay->screen[2]);
+    theDisplay->camera->activate();
+    theDisplay->scene->print();
+    theDisplay->camera->deactivate();
 
     /* Swaps the buffers so the printing will be visible. */
     SwapBuffers();
@@ -231,95 +137,6 @@ Display::setTitle(const char * _title)
     }
 
     return title != NULL;
-}
-/**
- * Adds a figure object to the list of objects to be printed.
- * @param Figure    *figure     The figure to be added to the list.
- */
-void
-Display::addFigure(Figure * figure)
-{
-	/* Setting the list of figures. */
-	if (figures == NULL )
-		figures = new FigureList();
-
-	/* Adding the figure. */
-	if (figures != NULL)
-	    figures->push_back(figure);
-}
-
-/**
- * Removes the figure from the list of figures to print.
- * @param Figure    *figure     The figure to be removed.
- */
-void
-Display::removeFigure(Figure *figure)
-{
-	/* Removing the figure. */
-	if (figures != NULL)
-	    figures->remove(figure);
-}
-
-/**
- * Retrives the last item of the figure list and removes it.
- * @return The requested item.
- */
-Figure *
-Display::popFigure()
-{
-	/* If the list has not been set return NULL. */
-	if (figures == NULL)
-		return NULL;
-
-    Figure * item = figures->back();
-    figures->pop_back();
-
-    return item;
-}
-
-/**
- * Retrieves the first element of the list and removes it.
- * @return The requested element.
- */
-Figure *
-Display::shiftFigure()
-{
-	/* If the list has not been set return NULL. */
-	if (figures == NULL)
-		return NULL;
-
-    Figure * item = figures->front();
-    figures->pop_front();
-
-    return item;
-}
-
-/**
- * Retrieves the first item of the list and returns it.
- * @return The item requested.
- */
-Figure *
-Display::firstFigure()
-{
-	/* If the list has not been set return NULL. */
-	if (figures == NULL)
-		return NULL;
-
-    return figures->front();
-}
-
-/**
- * Retrieves the last item of the list and returns it.
- * @return The item requested.
- */
-Figure *
-Display::lastFigure()
-{
-	/* If the list has not been set return NULL. */
-	if (figures == NULL)
-		return NULL;
-
-    return figures->back();
 }
 
 /**

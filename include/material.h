@@ -7,17 +7,15 @@
  * $Id$
  */
 
-#ifndef _MATERIAL_H
-#define _MATERIAL_H
+#ifndef _MATERIAL_H_
+#define _MATERIAL_H_
 
 #include <GL/gl.h>
 #include <map>
 
-#ifndef _GENGINE_H
 namespace GEngine {
     class Material;
 };
-#endif
 
 struct Pixmap {
     unsigned char * data;

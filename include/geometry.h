@@ -7,8 +7,8 @@
  * $Id$
  */
 
-#ifndef _GEOMETRY_H
-#define _GEOMETRY_H
+#ifndef _GEOMETRY_H_
+#define _GEOMETRY_H_
 
 #include <list>
 #include <GL/gl.h>
@@ -21,7 +21,6 @@
 
 /* The following declarations are needed for the Figure part. */
 
-#ifndef _GENGINE_H
 namespace GEngine {
     namespace Geometry {
         class Figure;
@@ -51,7 +50,6 @@ namespace GEngine {
         class Toroid;
     };
 };
-#endif
 
 /**
  * The abstract class for the printable objects.

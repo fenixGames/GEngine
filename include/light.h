@@ -5,14 +5,12 @@
  * @date    01.12.2015
  */
 
-#ifndef _LIGHT_H
-#define _LIGHT_H
+#ifndef _LIGHT_H_
+#define _LIGHT_H_
 
-#ifndef _GENGINE_H
 namespace GEngine {
     class Light;
 };
-#endif
 
 #include "geometry.h"
 

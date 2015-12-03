@@ -9,17 +9,15 @@
  * $Id$
  */
 
-#ifndef _CAMERA_H
-#define _CAMERA_H
+#ifndef _CAMERA_H_
+#define _CAMERA_H_
 #include "geometry.h"
 
 /* If the gengine.h is not the included one, add the inclusion to the namespace. */
-#ifndef _GENGINE_H
 namespace GEngine {
     class Camera;
     class StaticCamera;
 };
-#endif
 
 /**
  * Define the generic camera class.

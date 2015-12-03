@@ -7,21 +7,15 @@
  *
  * $Id$
  */
-#ifndef _DISPLAY_H
-#define _DISPLAY_H
+#ifndef _DISPLAY_H_
+#define _DISPLAY_H_
 
 #include <GL/gl.h>
-#include "geometry.h"
-#include "matrix.h"
-#include "camera.h"
+#include "world.h"
 
-#ifndef _GENGINE_H
 namespace GEngine {
     class Display;
 }
-#endif
-
-#define FigureList      std::list<GEngine::Geometry::Figure *>
 
 /**
  * The class associated to the display engine whose in charge of printing everything on the screen.
@@ -42,10 +36,8 @@ class GEngine::Display {
         static Display  *theDisplay; /* The main screen display. */
         int mainWin;    /* The identifier of the main Window. */
 
-        FigureList      * figures;  /* The list of figures of the display. */
-
-        Camera          * camera; /* The camera  attached to the display. */
-
+        Camera * camera;
+        Scene * scene;
         /* The function to draw the screen. */
         static void displayFunc();
     public:
@@ -63,24 +55,6 @@ class GEngine::Display {
 
         /* Sets the title of the actual window. */
         bool setTitle(const char * title);
-
-        /* Adds a figure to be drawn to the list of objects to draw. */
-        void addFigure(Geometry::Figure * figure);
-
-        /* Removes the figure of the list. */
-        void removeFigure(Geometry::Figure * figure);
-
-        /* Retrives the figure from the back of the list, removing it. */
-        Geometry::Figure * popFigure();
-
-        /* Retrives the figure from the beginning of the list, removing it. */
-        Geometry::Figure * shiftFigure();
-
-        /* Retrives the figure from the front of the list. Does not remove it. */
-        Geometry::Figure * firstFigure();
-
-        /* Retrieves the last figure from the list. It does not remove it. */
-        Geometry::Figure * lastFigure();
 
         /* Attaches the camera to the display. */
         void attachCamera(Camera * cam);
