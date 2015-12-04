@@ -8,13 +8,16 @@
 #include <GL/gl.h>
 #include "world.h"
 #include <math.h>
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 using namespace GEngine;
 using namespace GEngine::Geometry;
 
-static int black = 0;
+const int _black = 0;
 
-Material Scene::black = Material(Material::GL_SOLID_COLOR, (void *) &black);
+Material Scene::black = Material(Material::GL_SOLID_COLOR, (void *) &_black);
 /**
  * Constructors of the scene.
  */
@@ -63,7 +66,9 @@ Scene::setHorizon(Material * hor)
     horizon = hor;
 }
 
-
+/**
+ * Prints the scene on the screen.
+ */
 void
 Scene::print()
 {
@@ -71,54 +76,33 @@ Scene::print()
     FaceList::iterator      faceIt;
     PointList::iterator     pointIter;
     FigureList::iterator    iter;
-    float   alpha, beta;
-    double dist;
-    bool upPoint;
+    LightList::iterator     liter;
+
+    /* Print the horizon (it is a skybox). */
+    /** A skybox is a texture loaded from 6 files, each one for the 
+     * GL_TEXTURE_CUBE_MAP_<POSITIVE|NEGATIVE>_<X|Y|Z> componentes of
+     * the GL_TEXTURE_CUBE_MAP texture.
+     * go to https://ogldev.atspace.co.uk/www/tutorial25/tutorial25.html
+     * for more information.
+     */
 
 #ifdef DEBUG
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    axiscam.move(Point());
-
-    axiscam.activate();
-	glBegin(GL_LINES);
-    glColor3d( 1.0, 0.0, 0.0);
-    glVertex3d(-1.0, 0.0, 0.0);
-    glVertex3d( 1.0, 0.0, 0.0);
-    
-    glColor3d(0.0, 1.0, 0.0);
-    glVertex3d(0.0, -1.0, 0.0);
-    glVertex3d(0.0,  1.0, 0.0);
-    
-    glColor3d(0.0, 0.0, 1.0);
-    glVertex3d(0.0, 0.0, -1.0);
-    glVertex3d(0.0, 0.0, 1.0);
-    glEnd();
-
-    axiscam.deactivate();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-#endif
-
-    dist = (limits.xmax - limits.xmin) * (limits.xmax - limits.xmin);
-    dist += (limits.ymax - limits.ymin) * (limits.ymax - limits.ymin);
-    dist += (limits.zmax - limits.zmin) * (limits.zmax - limits.zmin);
-
-    dist = sqrt(dist);
-    /* Print the horizon (it is a sphere with the horizon's material. */
-    horizon->activate();
-    glBegin(GL_TRIANGLE_STRIP);
-    for (alpha = 0; alpha < 2.0 * M_PI; alpha += M_PI / 90.0) {
-        upPoint = false;
-        for (beta = 0; beta < M_PI; beta += M_PI / 90.0) {
-            glTexCoord2d(alpha / (2.0 * M_PI), beta / M_PI);
-            glVertex3d(dist * cos(alpha) * cos(beta), dist * sin(alpha) * cos(beta), dist * sin(beta));
-        }
+    long long xstep, zstep;
+    /* Print the XZ plane as lines for debug. */
+    glBegin(GL_LINES);
+    for (xstep = limits.xmin; xstep < limits.xmax; xstep += 10) {
+        glVertex3d(xstep, limits.ymin, limits.zmin);
+        glVertex3d(xstep, limits.ymin, limits.zmax);
     }
 
-    horizon->deactivate();
+    for (zstep = limits.zmin; zstep < limits.zmax; zstep += 10) {
+        glVertex3d(limits.xmin, limits.ymin, zstep);
+        glVertex3d(limits.xmax, limits.ymin, zstep);
+    }
+    glEnd();
+#endif
 
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
     /* Going through the list of figures. */
     for (iter = figures.begin(); iter != figures.end(); iter++) {
         faces = (*iter)->print();
@@ -142,5 +126,41 @@ Scene::print()
         (*iter)->deactivateMaterial();
     }
 
+    /* Activating the lights of the scene. */
+    for (liter = lights.begin(); liter != lights.end(); liter++)
+        (*liter)->activate();
 }
 
+/**
+ * Adds a light source to the scene if the maximum number of lights have not been reached.
+ * @param   Light   light       The light to be added to the scene.
+ */
+void
+Scene::addLight(Light light)
+{
+    int maxLights;
+    Light * lamp = new Light(light);
+
+    lamp->idx = lights.size();
+    glGetIntegerv(GL_MAX_LIGHTS, &maxLights);
+
+    if (lights.size() < maxLights)
+        lights.push_back(lamp);
+    else
+        delete lamp;
+}
+
+/**
+ * Sets the ambient light for the scene.
+ * @param   double  red     The red component of the scene.
+ * @param   double  green   The green component of the scene.
+ * @param   double  blue    The blue component of the scene.
+ */
+void
+Scene::setAmbient(float red, float green, float blue)
+{
+    ambient[0] = red;
+    ambient[1] = green;
+    ambient[2] = blue;
+    ambient[3] = 1.0;
+}

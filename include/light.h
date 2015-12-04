@@ -19,10 +19,10 @@ namespace GEngine {
  * directional or spotlight (flashlight and lamps).
  */
 class GEngine::Light {
+    friend class Scene;
     private:
         void setDefaults();
     protected:
-        static unsigned char ambient[4]; /* Ambient light for the scene. */
         float   intA[4], 
                 intD[4],
                 intSP[4];
@@ -33,7 +33,6 @@ class GEngine::Light {
         float atten[3]; /* Attenuation coefficients. */
 
         unsigned int idx; /* Should be set by the scene. */
-        static unsigned int nlights;
     public:
         /* Set a positional light. */
         Light(Geometry::Point pos = Geometry::Point());

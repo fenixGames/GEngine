@@ -62,6 +62,9 @@ class GEngine::Display {
         /* Creates a new camera and attaches it to the display. */
         void newCamera(Geometry::Point pos = Geometry::Point(), double yaw = 0.0,
                 double pitch = 0.0, double roll = 0.0);
+
+        /* Sets the current scene to display. */
+        void setScene(Scene * scene);
 };
 
 #endif

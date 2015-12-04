@@ -15,14 +15,18 @@
 
 namespace GEngine {
     class Material;
+    struct Pixmap;
+    union MaterialProp;
 };
 
-struct Pixmap {
+struct GEngine::Pixmap {
     unsigned char * data;
     int width, height;
 };
 
 #define TextureMap	std::map<GLenum, GLfloat *>
+#define MaterialMap TextureMap
+
 /**
  * A material used to print some figure.
  * The figure should give the mapping between world
@@ -31,10 +35,12 @@ struct Pixmap {
 class GEngine::Material {
     private:
 		void readBmpFile(const char * filename);
-		static TextureMap * defaults;
+		static TextureMap * texDefs;
+        static MaterialMap * matDefs;
     public:
         enum GEmaterial {
             GL_SOLID_COLOR = 0,
+            GL_FROM_LIGHT_PARAMS,
             GL_FROM_FILE,
             GL_FROM_PIXELMAP
         };
@@ -46,13 +52,15 @@ class GEngine::Material {
 		void activate();
 		void deactivate();
 
-		/* Sets a property for the texture. */
-		void setProperty(GLenum prop, float * value);
+		/* Sets a property for the texture/material. */
+		void setTexProperty(GLenum prop, float * value);
+        void setMatProperty(GLenum prop, float * values);
     protected:
         GEmaterial type;
         struct Pixmap texture;
 		unsigned buffer;
 		TextureMap properties;
+        MaterialMap material;
 };
 
 #endif

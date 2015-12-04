@@ -33,7 +33,16 @@ static const GLenum props[] = {
 	GL_GENERATE_MIPMAP
 };
 
-TextureMap * Material::defaults = NULL;
+static const GLenum matProps[] = {
+    GL_AMBIENT,
+    GL_DIFFUSE,
+    GL_SPECULAR,
+    GL_EMISSION,
+    GL_SHININESS
+};
+
+TextureMap * Material::texDefs = NULL;
+TextureMap * Material::matDefs = NULL;
 
 /**
  * Constructor for the material class.
@@ -60,11 +69,13 @@ Material::Material(GEmaterial t, void * data)
         case GL_FROM_PIXELMAP:          
             memcpy(&texture, data, sizeof(struct Pixmap));
             break;
+        case GL_FROM_LIGHT_PARAMS:
+            break;
     }
 
 	/* Setting the default texture properties. */
-	if (defaults == NULL) {
-		defaults = new TextureMap();
+	if (texDefs == NULL) {
+		texDefs = new TextureMap();
 
 		for (unsigned idx = 0; idx < (sizeof( props ) / sizeof(GLenum)); idx++) {
 			if (props[idx] == GL_TEXTURE_BORDER_COLOR)
@@ -74,13 +85,31 @@ Material::Material(GEmaterial t, void * data)
 
 			if (value != NULL) {
 				glGetTexParameterfv(GL_TEXTURE_2D, props[idx], value);
-				(*defaults)[props[idx]] = value;
+				(*texDefs)[props[idx]] = value;
 			}
 		}
 	}
 
+    /* Setting the default material properties. */
+    if (matDefs == NULL) {
+        matDefs = new MaterialMap();
+
+        for (unsigned idx = 0; idx < (sizeof( matProps ) / sizeof(GLenum)); idx++) {
+            if (matProps[idx] == GL_SHININESS)
+                value = new float[1];
+            else
+                value = new float[4];
+
+            if (value != NULL) {
+                glGetMaterialfv(GL_FRONT, matProps[idx], value);
+                (*matDefs)[matProps[idx]] = value;
+            }
+        }
+    }
+    
 	/* Setting a copy of the default properties for this texture. */
-	properties = TextureMap(*defaults);
+	properties = TextureMap(*texDefs);
+    material = MaterialMap( *matDefs);
 
     /* Generating the texture pointer. */
 	glGenTextures(1, &buffer);
@@ -150,6 +179,7 @@ void
 Material::activate()
 {
 	TextureMap::iterator props;
+    MaterialMap::iterator mats;
 
 	if (texture.data == NULL)
 		return;
@@ -157,6 +187,11 @@ Material::activate()
     /* If it is a simple color, print the color. */
     if (type == GL_SOLID_COLOR) {
         glColor3d(texture.data[0] / 0xFF, texture.data[1] / 0xFF, texture.data[2] / 0xFF);
+        return;
+    } else if (type == GL_FROM_LIGHT_PARAMS) {
+        for (mats = material.begin(); mats != material.end(); mats++) {
+            glMaterialfv(GL_FRONT_AND_BACK, mats->first, mats->second);
+        }
         return;
     }
 
@@ -184,9 +219,17 @@ void
 Material::deactivate()
 {
 	TextureMap::iterator props;
+    GLfloat defs[4] = {0.0, 0.0, 0.0, 1.0};
+
+    if (type == GL_FROM_LIGHT_PARAMS) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, defs);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, defs);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_COLOR_INDEXES, defs);
+        return;
+    }
 
 	/* Setting the properties to the default ones. */
-	for (props = defaults->begin(); props != defaults->end(); props++) {
+	for (props = texDefs->begin(); props != texDefs->end(); props++) {
 		glTexParameterfv(GL_TEXTURE_2D, props->first, props->second);
 	}
 }
@@ -198,7 +241,7 @@ Material::deactivate()
  * @param	float	* value	The value to be set.
  */
 void
-Material::setProperty(GLenum prop, float * value)
+Material::setTexProperty(GLenum prop, float * value)
 {
 	GLfloat * newVal;
 	TextureMap::iterator it;
@@ -218,5 +261,34 @@ Material::setProperty(GLenum prop, float * value)
 	memcpy(newVal, value, size);
 	free( it->second );
 	properties[prop] = newVal;
+}
+
+/**
+ * Sets the properties of the material derivated from light reflexion and so on.
+ * @param   GLenum  prop    The property to set.
+ * @param   float   * value The values to set.
+ */
+void
+Material::setMatProperty(GLenum prop, float * value)
+{
+    GLfloat * mat;
+    MaterialMap::iterator it;
+    int size = 4;
+
+    /* Search the property. */
+    if ((it = material.find(prop)) == material.end())
+        return;
+
+    if (prop == GL_SHININESS)
+        size = 1;
+
+    mat = new GLfloat[size];
+    if (mat == NULL)
+        return;
+
+    memcpy(mat, value, size * sizeof(GLfloat));
+
+    delete material[prop];
+    material[prop] = mat;
 }
 

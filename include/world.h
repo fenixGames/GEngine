@@ -41,6 +41,7 @@ namespace GEngine {
 
 #define FigureList      std::list<GEngine::Geometry::Figure *>
 #define CameraVector    std::vector<GEngine::Camera *>
+#define LightList       std::vector<GEngine::Light *>
 
 /**
  * The list of figures and objects to map into the window.
@@ -59,9 +60,11 @@ class GEngine::Scene {
             long long zmax;
         } limits;
         FigureList      figures;    /* The list of figures on the scene. */
+        LightList       lights;     /* The list of lights on the scene. */
         Material        * horizon;    /* The material for the horizon -> static. */
         enum position   scenePos;   /* The position of the scene, CENTER means the camera 
                                        is in this scene. */
+        float ambient[4]; /* Ambient light for the scene. */
     public:
         Scene(long long xmin, long long xmax, long long ymin, long long ymax, 
                 long long zmin, long long zmax);
@@ -69,6 +72,12 @@ class GEngine::Scene {
 
         /* Add figures. */
         void addFigure(Geometry::Figure * fig);
+
+        /* Add lights to the scene. */
+        void addLight(Light light);
+
+        /* Sets the ambient light. */
+        void setAmbient(float red, float green, float blue);
 
         /* Sets the horizon's material. */
         void setHorizon(Material  * hor);

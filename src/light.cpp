@@ -12,8 +12,6 @@
 using namespace GEngine;
 using namespace GEngine::Geometry;
 
-unsigned int Light::nlights = 0;
-
 /**
  * Constructors of the Light class.
  */
@@ -43,15 +41,6 @@ Light::Light(Vector vect)
 void
 Light::setDefaults()
 {
-    int maxLights;
-
-    /* Get the maximum number of light objects. */
-    glGetIntegerv(GL_MAX_LIGHTS, &maxLights);
-
-    /* Set the identifier of the light. */
-    idx = GL_LIGHT0 + nlights;
-    nlights = (nlights + 1) % maxLights;
-
     intA[0] = intA[1] = intA[2] = 0.0;
     intD[0] = intD[1] = intD[2] = 0.0;
     intSP[0] = intSP[1] = intSP[2] = 0.0;
@@ -116,5 +105,33 @@ Light::setAttenuation(float constant, float linear, float cuadratic)
     atten[0] = constant;
     atten[1] = linear;
     atten[2] = cuadratic;
+}
+
+/**
+ * Activates the light in order to see results.
+ */
+void
+Light::activate()
+{
+    glLightfv(GL_LIGHT0 + idx, GL_AMBIENT, intA);
+    glLightfv(GL_LIGHT0 + idx, GL_DIFFUSE, intD);
+    glLightfv(GL_LIGHT0 + idx, GL_SPECULAR, intSP);
+    glLightfv(GL_LIGHT0 + idx, GL_POSITION, position);
+    glLightfv(GL_LIGHT0 + idx, GL_SPOT_CUTOFF, &spAng);
+    glLightfv(GL_LIGHT0 + idx, GL_SPOT_DIRECTION, spDir);
+    glLightfv(GL_LIGHT0 + idx, GL_SPOT_EXPONENT, &spExp);
+    glLightfv(GL_LIGHT0 + idx, GL_CONSTANT_ATTENUATION, &atten[0]);
+    glLightfv(GL_LIGHT0 + idx, GL_LINEAR_ATTENUATION, &atten[1]);
+    glLightfv(GL_LIGHT0 + idx, GL_QUADRATIC_ATTENUATION, &atten[2]);
+    glEnable(GL_LIGHT0 + idx);
+}
+
+/**
+ * Deactivates the light.
+ */
+void 
+Light::deactivate()
+{
+    glDisable(GL_LIGHT0 + idx);
 }
 

@@ -46,6 +46,9 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
     /* Initializing the title of the window to NULL. */
     title = NULL;
 
+    scene = NULL;
+    camera = NULL;
+
     if (theDisplay == NULL) {
 		/* OS initialization. */
         displayInit();
@@ -76,9 +79,12 @@ Display::displayFunc()
     glColor3f(theDisplay->fgcolor[0], theDisplay->fgcolor[1], theDisplay->fgcolor[2]);
 
     /* Prints the figures of the list. */
-    theDisplay->camera->activate();
-    theDisplay->scene->print();
-    theDisplay->camera->deactivate();
+    if (theDisplay->camera != NULL) {
+        theDisplay->camera->activate();
+        if (theDisplay->scene != NULL)
+            theDisplay->scene->print();
+        theDisplay->camera->deactivate();
+    }
 
     /* Swaps the buffers so the printing will be visible. */
     SwapBuffers();
@@ -150,7 +156,8 @@ Display::initGL()
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_LINE_SMOOTH);
     glShadeModel(GL_SMOOTH);
-//    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHTING);
+//    glEnable(GL_LIGHT0);
     
     /* Setting the background color. */
     glClearColor(bgcolor[0], bgcolor[1], bgcolor[2], 0.0f);
@@ -166,7 +173,7 @@ Display::initGL()
             0.5 * screen[1], 0.5 * screen[2], 1.0 * screen[2]);
 */
     glOrtho(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
-            0.5 * screen[1], 0.001 * screen[2], 1.0 * screen[2]);
+            0.5 * screen[1], -1.0 * screen[2], 1.0 * screen[2]);
 
     /* Setting the sizes of the points and the lines if needed. */
 //    glPointSize(4.0f);
@@ -197,5 +204,18 @@ Display::newCamera(Point pos, double yaw, double pitch, double roll)
 {
     Camera  * cam = new StaticCamera(pos, yaw, pitch, roll);
     attachCamera(cam);
+}
+
+/**
+ * Sets the scene to display.
+ * @param   Scene   *sc     The scene which should be displayed.
+ */
+void
+Display::setScene(Scene * sc)
+{
+    if (sc == NULL)
+        return;
+
+    scene = sc;
 }
 
