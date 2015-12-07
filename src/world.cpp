@@ -144,7 +144,7 @@ Scene::addLight(Light light)
     lamp->idx = lights.size();
     glGetIntegerv(GL_MAX_LIGHTS, &maxLights);
 
-    if (lights.size() < maxLights)
+    if ((int)lights.size() < maxLights)
         lights.push_back(lamp);
     else
         delete lamp;
@@ -163,4 +163,17 @@ Scene::setAmbient(float red, float green, float blue)
     ambient[1] = green;
     ambient[2] = blue;
     ambient[3] = 1.0;
+}
+
+/**
+ * Process the scene in the idle state (not printing).
+ * @param   double  time    The time since the program was launched.
+ */
+void
+Scene::idle(const double time)
+{
+    FigureList::iterator fig;
+
+    for (fig = figures.begin(); fig != figures.end(); fig++)
+        (*fig)->motion(time);
 }

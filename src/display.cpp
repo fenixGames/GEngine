@@ -12,6 +12,10 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <sys/time.h>
+
+
+static struct timeval current;
 
 using namespace GEngine;
 using namespace GEngine::Geometry;
@@ -35,9 +39,9 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
     position[0] = x;
     position[1] = y;
 
-    bgcolor[0] = 1.0f;
-    bgcolor[1] = 1.0f;
-    bgcolor[2] = 1.0f;
+    bgcolor[0] = 0.0f;
+    bgcolor[1] = 0.0f;
+    bgcolor[2] = 0.0f;
 
     fgcolor[0] = 0.0f;
     fgcolor[1] = 0.0f;
@@ -54,6 +58,7 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
         displayInit();
 
 		theDisplay = this;
+        gettimeofday(&current, NULL);
 	}
 }
 
@@ -157,7 +162,9 @@ Display::initGL()
     glEnable(GL_LINE_SMOOTH);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_LIGHTING);
-//    glEnable(GL_LIGHT0);
+//    glLightModelf(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+    glLightModelf(GL_LIGHT_MODEL_LOCAL_VIEWER, 1.0);
+    glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1.0);
     
     /* Setting the background color. */
     glClearColor(bgcolor[0], bgcolor[1], bgcolor[2], 0.0f);
@@ -167,17 +174,6 @@ Display::initGL()
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-
-    /* Use orthographic view until we build the world class and define where the camera will be. */
-/*    glFrustum(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
-            0.5 * screen[1], 0.5 * screen[2], 1.0 * screen[2]);
-*/
-    glOrtho(- 0.5 * screen[0], 0.5 * screen[0], -0.5 * screen[1], 
-            0.5 * screen[1], -1.0 * screen[2], 1.0 * screen[2]);
-
-    /* Setting the sizes of the points and the lines if needed. */
-//    glPointSize(4.0f);
-    
 }
 
 /**
@@ -218,4 +214,26 @@ Display::setScene(Scene * sc)
 
     scene = sc;
 }
+
+/**
+ * Renderize the scene as an idle process.
+ */
+void
+Display::idleRender()
+{
+    struct timeval now;
+    time_t millis;
+    
+    gettimeofday(&now, NULL);
+
+    millis = (now.tv_sec - current.tv_sec) * 1000 + (now.tv_usec - current.tv_usec) / 1000;
+
+    if (theDisplay->camera != NULL)
+        theDisplay->camera->cameraCtrl(millis);
+    if (theDisplay->scene != NULL)
+        theDisplay->scene->idle(millis);
+
+    displayFunc();
+}
+
 

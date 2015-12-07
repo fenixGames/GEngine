@@ -84,6 +84,7 @@ class GEngine::Scene {
 
         /* Prints the whole scene on the screen. */
         void print();
+        void idle(const double time);
 
         /* Gets the whole frame for the camera. */
         void getFrame(long dist2Near, long depth, float angle, double frame[6]);

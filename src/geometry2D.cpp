@@ -170,7 +170,7 @@ Figure::operator = (const Figure& fig)
  * @param   int     time    The time for the motion, unused for static.
  */
 void
-StaticFigure::motion(int time_stamp)
+StaticFigure::motion(double time_stamp)
 {
 }
 
@@ -219,13 +219,17 @@ Face::transform(GLint center[3], GLfloat angles[3])
 
     /* Setting the rotation matrix. */
     rotation = roll * yaw * pitch;
-
+#ifdef DEBUG
+//    rotation.print();
+#endif
     /* Going through all the points of the face. */
     for (iter = vertex->begin(); iter != vertex->end(); iter++) {
-        in = Vector(3, (*iter)->x, (*iter)->y, (*iter)->z);
+        in = Vector(3, (*iter)->x - center[0],
+                (*iter)->y - center[1], (*iter)->z - center[2]);
         out = rotation * in;
 
-        newVert.push_back(new Point(out[0], out[1], out[2], (*iter)->s, (*iter)->t));
+        newVert.push_back(new Point(out[0] + center[0], out[1] + center[1], 
+                    out[2] + center[2], (*iter)->s, (*iter)->t));
     }
     out = rotation * (*normal);
 

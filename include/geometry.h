@@ -70,7 +70,7 @@ class GEngine::Geometry::Figure {
 
         /* Virtual functions needed to be overriden. */
         virtual FaceList * print() = 0; 
-        virtual void motion(int time) = 0;
+        virtual void motion(double time) = 0;
 
         /* By default, all the figures are wired figures, with this, they will be solid. */
         void setSolid();
@@ -100,7 +100,7 @@ class GEngine::Geometry::Figure {
  */
 class GEngine::Geometry::StaticFigure : public GEngine::Geometry::Figure {
     public:
-        void motion(int time);
+        virtual void motion(double time);
 };
 
 /**
@@ -269,7 +269,7 @@ class GEngine::Geometry::Mesh {
 /**
  * Defining a polyhedron.
  */
-class GEngine::Geometry::Polyhedron : public GEngine::Geometry::StaticFigure {
+class GEngine::Geometry::Polyhedron : public GEngine::Geometry::Figure {
     private:
         void getPoints(MeshList * list);
     protected:

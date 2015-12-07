@@ -27,6 +27,7 @@ class GEngine::Camera {
     protected:
         Geometry::Point       position;   /* The position of the camera in the space. */
         double      yaw, pitch, roll;   /* The inclination of the camera in the three axis. */
+        double      projection[6];      /* The values for the projection matrix. */
     public:
         /* Constructor, initial to the origin. */
         Camera(Geometry::Point initial = Geometry::Point(), double yaw = 0.0, double pitch = 0.0, double roll = 0.0);
@@ -38,7 +39,7 @@ class GEngine::Camera {
         void rotate(double yaw, double pitch, double roll);
 
         /* Controls the camera. Needs to be overriden. */
-        virtual int cameraCtrl(void * data) = 0;
+        virtual int cameraCtrl(double time, void * data = NULL) = 0;
 
         /* Active the camera. */
         void activate();
@@ -46,10 +47,10 @@ class GEngine::Camera {
         /* Deactivate the camera. */
         void deactivate();
 
-        /* Get the distance of the point to the camera. */
-        double getDistance(Geometry::Point p);
+        /* Sets the field of view for the camera. */
+        void setFOV(double distance, double overture, double depth);
 
-        /* Get direction. */
+        /* Gets the direction of the camera. */
         Vector getDirection();
 };
 
@@ -63,7 +64,7 @@ class GEngine::StaticCamera : public Camera {
                 double yaw = 0.0, double pitch = 0.0, double roll = 0.0);
         StaticCamera(const Camera& cam);
 
-        int cameraCtrl(void *data);
+        int cameraCtrl(double time, void *data = NULL);
 };
 
 #endif

@@ -1,3 +1,13 @@
+/**
+ * This file contains the information needed to manage the functions derivated from the 
+ * freeglut library.
+ *
+ * @author  Roberto Fernandez Cueto
+ * @date    14.10.2015
+ *
+ * $Id$
+ */
+
 #include "display.h"
 #include <GL/glut.h>
 
@@ -48,6 +58,7 @@ Display::print()
 
     /* Setting the function to redraw everything. */
     glutDisplayFunc(&Display::displayFunc);
+    glutIdleFunc(&Display::idleRender);
 
     initGL();
 	/* Main loop should be on the GEngine class when finished. */

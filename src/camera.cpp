@@ -51,7 +51,7 @@ Camera::move(Point point)
 void
 Camera::rotate(double y, double p, double r)
 {
-    yaw = y; pitch = y; roll = r;
+    yaw = y; pitch = p; roll = r;
 }
 
 /**
@@ -64,10 +64,16 @@ Camera::activate()
     glPushMatrix();
 
     glLoadIdentity();
-    glTranslated(position.x, position.y, position.z);
+    glTranslated(-position.x, -position.y, -position.z);
     glRotated(yaw, 1.0, 0.0, 0.0);
     glRotated(pitch, 0.0, 1.0, 0.0);
     glRotated(roll, 0.0, 0.0, 1.0);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glFrustum(projection[0], projection[1], projection[2], 
+            projection[3], projection[4], projection[5]);
 }
 
 /**
@@ -78,20 +84,9 @@ Camera::deactivate()
 {
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-}
 
-/**
- * Gets the distance from the point to the camera.
- */
-double
-Camera::getDistance(Point point)
-{
-    Vector cam(3, position.x, position.y, position.z),
-           vect(3, point.x, point.y, point.z), out;
-
-    out = cam - vect;
-
-    return out.mod();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
 }
 
 /**
@@ -123,6 +118,27 @@ Camera::getDirection()
 }
 
 /**
+ * Sets the field of view for the camera. That means that the projection matrix will be
+ * set acording to the FOV.
+ * @param   double  distance    Distance from the camera to the front plane.
+ * @param   double  overture    The angle of overture of the lens.
+ * @param   double  depth       The depth of the projection.
+ */
+void
+Camera::setFOV(double distance, double overture, double depth)
+{
+    /* No FOV will be possible. */
+    if (overture >= 90.0 || overture <= 0.0)
+        return;
+
+    /* Calculate the near plane. */
+    projection[0] = projection[2] = - distance * tan(overture * M_PI / 180.0); /* left, bottom. */
+    projection[1] = projection[3] = distance * tan(overture * M_PI / 180.0); /* right, top. */
+    projection[4] = distance;
+    projection[5] = distance + depth;
+}
+
+/**
  * Constructor of the static camera.
  */
 StaticCamera::StaticCamera(Point initial, double y, double p, double r) : Camera(initial, y, p, r)
@@ -141,7 +157,7 @@ StaticCamera::StaticCamera(const Camera& cam)
  * Defines the camera control for the static camera -> do nothing.
  */
 int 
-StaticCamera::cameraCtrl(void *data)
+StaticCamera::cameraCtrl(double time, void *data)
 {
     return 0;
 }

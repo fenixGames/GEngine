@@ -25,6 +25,7 @@ class GEngine::Display {
 	private:
         static void displayInit();
         static void SwapBuffers();
+        static void idleRender();
         void initGL();
     protected:
         GLuint screen[3];   /* Dimensions of the main window. */
