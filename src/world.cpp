@@ -15,9 +15,8 @@
 using namespace GEngine;
 using namespace GEngine::Geometry;
 
-const int _black = 0;
 
-Material Scene::black = Material(Material::GL_SOLID_COLOR, (void *) &_black);
+Material Scene::black = Material();
 /**
  * Constructors of the scene.
  */
@@ -32,6 +31,7 @@ Scene::Scene(long long xmin, long long xmax, long long ymin, long long ymax,
     limits.zmax = zmax;
 
     horizon = &black;
+    camera = NULL;
 }
 
 Scene::Scene(long long lim[6])
@@ -44,16 +44,27 @@ Scene::Scene(long long lim[6])
     limits.zmax = lim[0];
 
     horizon = &black;
+    camera = NULL;
 }
 
 /**
- * Adds a figure to the list of all the figures on the scene.
+ * Adds a figure to the list of all the dynamic figures on the scene.
  * @param   Figure  * fig   The figure to attach to the list.
  */
 void
-Scene::addFigure(Figure * fig)
+Scene::addDynFigure(Figure * fig)
 {
-    figures.push_back(fig);
+    DynFigures.push_back(fig);
+}
+
+/**
+ * Adds a figure to the list of all the static figures.
+ * @param   StaticFigure    *fig    The static figure that must be added.
+ */
+void
+Scene::addStaFigure(StaticFigure * fig)
+{
+    StaFigures.push_back(fig);
 }
 
 /**
@@ -67,44 +78,18 @@ Scene::setHorizon(Material * hor)
 }
 
 /**
- * Prints the scene on the screen.
+ * Prints the dynamic figures on the screen.
  */
 void
-Scene::print()
+Scene::printDynamic()
 {
     FaceList                * faces;
     FaceList::iterator      faceIt;
     PointList::iterator     pointIter;
     FigureList::iterator    iter;
-    LightList::iterator     liter;
 
-    /* Print the horizon (it is a skybox). */
-    /** A skybox is a texture loaded from 6 files, each one for the 
-     * GL_TEXTURE_CUBE_MAP_<POSITIVE|NEGATIVE>_<X|Y|Z> componentes of
-     * the GL_TEXTURE_CUBE_MAP texture.
-     * go to https://ogldev.atspace.co.uk/www/tutorial25/tutorial25.html
-     * for more information.
-     */
-
-#ifdef DEBUG
-    long long xstep, zstep;
-    /* Print the XZ plane as lines for debug. */
-    glBegin(GL_LINES);
-    for (xstep = limits.xmin; xstep < limits.xmax; xstep += 10) {
-        glVertex3d(xstep, limits.ymin, limits.zmin);
-        glVertex3d(xstep, limits.ymin, limits.zmax);
-    }
-
-    for (zstep = limits.zmin; zstep < limits.zmax; zstep += 10) {
-        glVertex3d(limits.xmin, limits.ymin, zstep);
-        glVertex3d(limits.xmax, limits.ymin, zstep);
-    }
-    glEnd();
-#endif
-
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
-    /* Going through the list of figures. */
-    for (iter = figures.begin(); iter != figures.end(); iter++) {
+    /* Going through the list of DynFigures. */
+    for (iter = DynFigures.begin(); iter != DynFigures.end(); iter++) {
         faces = (*iter)->print();
         
         (*iter)->activeMaterial();
@@ -125,10 +110,92 @@ Scene::print()
         delete faces;
         (*iter)->deactivateMaterial();
     }
+}
+
+/**
+ * Prints the static figures on the screen.
+ */
+void
+Scene::printStatic()
+{
+    FaceList                * faces;
+    FaceList::iterator      faceIt;
+    PointList::iterator     pointIter;
+    StaticFigureList::iterator    iter;
+
+   /* Going through the list of static figures. */
+    for (iter = StaFigures.begin(); iter != StaFigures.end(); iter++) {
+        faces = (*iter)->print();
+        
+        (*iter)->activeMaterial();
+
+        /* Going through each of the faces. */
+        for (faceIt = faces->begin(); faceIt != faces->end(); faceIt++) {
+            glBegin((*iter)->getMode());
+
+            /* Printing the points. */
+            for (pointIter = (*faceIt)->vertex->begin(); pointIter != (*faceIt)->vertex->end(); pointIter++){
+    			/* Printing the points. */
+                glTexCoord2d((*pointIter)->s, (*pointIter)->t);
+                glVertex3d((*pointIter)->x, (*pointIter)->y, - (*pointIter)->z);
+            }
+
+            glEnd();
+        }
+        delete faces;
+        (*iter)->deactivateMaterial();
+    }
+}
+
+/**
+ * Prints the whole scene on the screen.
+ */
+void
+Scene::print()
+{
+    LightList::iterator     liter;
+
+    /* Print the horizon (it is a skybox). */
+    /** A skybox is a texture loaded from 6 files, each one for the 
+     * GL_TEXTURE_CUBE_MAP_<POSITIVE|NEGATIVE>_<X|Y|Z> componentes of
+     * the GL_TEXTURE_CUBE_MAP texture.
+     * go to https://ogldev.atspace.co.uk/www/tutorial25/tutorial25.html
+     * for more information.
+     */
+
+    /* If there is no camera, nothing will be recorded. */
+    if (camera == NULL)
+        return;
+    else
+        camera->setFOV(0.1, 90, limits.zmax - limits.zmin);
+
+    camera->activate();
+#ifdef DEBUG
+    long long xstep, zstep;
+    /* Print the XZ plane as lines for debug. */
+    glBegin(GL_LINES);
+    for (xstep = limits.xmin; xstep < limits.xmax; xstep += 10) {
+        glVertex3d(xstep, limits.ymin, limits.zmin);
+        glVertex3d(xstep, limits.ymin, limits.zmax);
+    }
+
+    for (zstep = limits.zmin; zstep < limits.zmax; zstep += 10) {
+        glVertex3d(limits.xmin, limits.ymin, zstep);
+        glVertex3d(limits.xmax, limits.ymin, zstep);
+    }
+    glEnd();
+#endif
+
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+ 
+    printDynamic();
+    printStatic();
 
     /* Activating the lights of the scene. */
     for (liter = lights.begin(); liter != lights.end(); liter++)
         (*liter)->activate();
+
+    camera->deactivate();
 }
 
 /**
@@ -174,6 +241,19 @@ Scene::idle(const double time)
 {
     FigureList::iterator fig;
 
-    for (fig = figures.begin(); fig != figures.end(); fig++)
+    for (fig = DynFigures.begin(); fig != DynFigures.end(); fig++)
         (*fig)->motion(time);
+    if (camera != NULL)
+        camera->cameraCtrl(time, NULL);
 }
+
+/**
+ * Sets the camera for the scene.
+ * @param   Camera  cam     The camera to be set into the screen.
+ */
+void
+Scene::addCamera(Camera * cam)
+{
+    camera = cam;
+}
+

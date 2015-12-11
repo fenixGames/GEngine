@@ -51,7 +51,6 @@ Display::Display(GLuint width, GLuint height, GLuint depth, GLuint x, GLuint y)
     title = NULL;
 
     scene = NULL;
-    camera = NULL;
 
     if (theDisplay == NULL) {
 		/* OS initialization. */
@@ -84,12 +83,8 @@ Display::displayFunc()
     glColor3f(theDisplay->fgcolor[0], theDisplay->fgcolor[1], theDisplay->fgcolor[2]);
 
     /* Prints the figures of the list. */
-    if (theDisplay->camera != NULL) {
-        theDisplay->camera->activate();
         if (theDisplay->scene != NULL)
             theDisplay->scene->print();
-        theDisplay->camera->deactivate();
-    }
 
     /* Swaps the buffers so the printing will be visible. */
     SwapBuffers();
@@ -162,7 +157,7 @@ Display::initGL()
     glEnable(GL_LINE_SMOOTH);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_LIGHTING);
-//    glLightModelf(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+    glLightModelf(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
     glLightModelf(GL_LIGHT_MODEL_LOCAL_VIEWER, 1.0);
     glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1.0);
     
@@ -174,32 +169,6 @@ Display::initGL()
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-}
-
-/**
- * Attaches a camera to the display.
- * If a previous one was attached, destroy it.
- * @param   Camera  * cam   The camera to be attached.
- */
-void
-Display::attachCamera(Camera    *cam)
-{
-    camera = cam;
-}
-
-/**
- * Creates a new camera and attaches it to the display.
- * Destroys the camera already attached to the display.
- * @param   Point   pos     The position of the camera.
- * @param   double  yaw     The yaw of the camera.
- * @param   double  pitch   The pitch of the camera.
- * @param   double  roll    The roll of the camera.
- */
-void
-Display::newCamera(Point pos, double yaw, double pitch, double roll)
-{
-    Camera  * cam = new StaticCamera(pos, yaw, pitch, roll);
-    attachCamera(cam);
 }
 
 /**
@@ -228,8 +197,6 @@ Display::idleRender()
 
     millis = (now.tv_sec - current.tv_sec) * 1000 + (now.tv_usec - current.tv_usec) / 1000;
 
-    if (theDisplay->camera != NULL)
-        theDisplay->camera->cameraCtrl(millis);
     if (theDisplay->scene != NULL)
         theDisplay->scene->idle(millis);
 

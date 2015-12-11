@@ -37,7 +37,6 @@ class GEngine::Display {
         static Display  *theDisplay; /* The main screen display. */
         int mainWin;    /* The identifier of the main Window. */
 
-        Camera * camera;
         Scene * scene;
         /* The function to draw the screen. */
         static void displayFunc();
@@ -56,13 +55,6 @@ class GEngine::Display {
 
         /* Sets the title of the actual window. */
         bool setTitle(const char * title);
-
-        /* Attaches the camera to the display. */
-        void attachCamera(Camera * cam);
-
-        /* Creates a new camera and attaches it to the display. */
-        void newCamera(Geometry::Point pos = Geometry::Point(), double yaw = 0.0,
-                double pitch = 0.0, double roll = 0.0);
 
         /* Sets the current scene to display. */
         void setScene(Scene * scene);

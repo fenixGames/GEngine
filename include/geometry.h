@@ -19,6 +19,12 @@
 #define MeshList	std::list<Mesh *>
 #define FaceList    std::list<Face *>
 
+#ifdef STATIC_FIGURES
+#define TYPE    public GEngine::Geometry::StaticFigure
+#else
+#define TYPE    public GEngine::Geometry::Figure
+#endif
+
 /* The following declarations are needed for the Figure part. */
 
 namespace GEngine {
@@ -147,7 +153,7 @@ class GEngine::Geometry::Point  {
 /**
  * The class used to print an arc.
  */
-class GEngine::Geometry::Arc : public GEngine::Geometry::StaticFigure {
+class GEngine::Geometry::Arc : TYPE {
     public:
         Arc(Point c, Point s, GLfloat a = 360.0f);
 
@@ -177,7 +183,7 @@ class GEngine::Geometry::Circle : public GEngine::Geometry::Arc {
 /**
  * The class used to print a segment.
  */
-class GEngine::Geometry::Segment : public GEngine::Geometry::StaticFigure {
+class GEngine::Geometry::Segment : TYPE {
     protected:
         Point   start,  /* The starting point of the segment. */
                 end;    /* The ending point of the segment. */
@@ -191,7 +197,7 @@ class GEngine::Geometry::Segment : public GEngine::Geometry::StaticFigure {
 /**
  * The class to draw polygons.
  */
-class GEngine::Geometry::Polygon : public GEngine::Geometry::StaticFigure {
+class GEngine::Geometry::Polygon : TYPE {
     private:
         void getOrigin();
         float radius;
@@ -211,7 +217,7 @@ class GEngine::Geometry::Polygon : public GEngine::Geometry::StaticFigure {
  *  x = xMod * cos(ang);
  *  y = yMod * sin(ang);
  */
-class GEngine::Geometry::EllArc : public GEngine::Geometry::StaticFigure {
+class GEngine::Geometry::EllArc : TYPE {
     public:
         EllArc(Point center, Point start,
                 GLfloat a, GLfloat b, GLfloat angle = 360.0f);
@@ -269,7 +275,7 @@ class GEngine::Geometry::Mesh {
 /**
  * Defining a polyhedron.
  */
-class GEngine::Geometry::Polyhedron : public GEngine::Geometry::Figure {
+class GEngine::Geometry::Polyhedron : TYPE {
     private:
         void getPoints(MeshList * list);
     protected:

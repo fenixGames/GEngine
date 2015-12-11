@@ -39,9 +39,10 @@ namespace GEngine {
     };
 };
 
-#define FigureList      std::list<GEngine::Geometry::Figure *>
-#define CameraVector    std::vector<GEngine::Camera *>
-#define LightList       std::vector<GEngine::Light *>
+#define FigureList          std::list<GEngine::Geometry::Figure *>
+#define StaticFigureList    std::list<GEngine::Geometry::StaticFigure *>
+#define CameraVector        std::vector<GEngine::Camera *>
+#define LightList           std::vector<GEngine::Light *>
 
 /**
  * The list of figures and objects to map into the window.
@@ -50,6 +51,8 @@ class GEngine::Scene {
     friend class Map;
     private:
         static Material black;
+        void printDynamic();
+        void printStatic();
     protected:
         struct {
             long long xmin;
@@ -59,7 +62,9 @@ class GEngine::Scene {
             long long zmin;
             long long zmax;
         } limits;
-        FigureList      figures;    /* The list of figures on the scene. */
+        FigureList      DynFigures;    /* The list of figures on the scene. */
+        StaticFigureList    StaFigures; /* The list of static figures of the scene. */
+        Camera          * camera;
         LightList       lights;     /* The list of lights on the scene. */
         Material        * horizon;    /* The material for the horizon -> static. */
         enum position   scenePos;   /* The position of the scene, CENTER means the camera 
@@ -71,7 +76,8 @@ class GEngine::Scene {
         Scene(long long limits[6]);
 
         /* Add figures. */
-        void addFigure(Geometry::Figure * fig);
+        void addDynFigure(Geometry::Figure * fig);
+        void addStaFigure(Geometry::StaticFigure *fig);
 
         /* Add lights to the scene. */
         void addLight(Light light);
@@ -86,8 +92,9 @@ class GEngine::Scene {
         void print();
         void idle(const double time);
 
-        /* Gets the whole frame for the camera. */
-        void getFrame(long dist2Near, long depth, float angle, double frame[6]);
+        /* Sets the camera. */
+        void addCamera(Camera * cam);
+
 };
 
 #endif

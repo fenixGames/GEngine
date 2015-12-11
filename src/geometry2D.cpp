@@ -86,7 +86,7 @@ Figure::setMaterial(Material * mat)
 {
     material = mat;
 }
-
+#if 0
 /**
  * Sets the material from a texture stored on a file.
  * @param   char    *file   The path to the file where the texture is stored.
@@ -120,7 +120,7 @@ Figure::setMaterialFromRGB(GLubyte red, GLubyte green, GLubyte blue)
 
     material = new Material(Material::GL_SOLID_COLOR, (void *)color);
 }
-
+#endif
 /**
  * Activates the material if set, if not, it will be a wired figure that can be solid.
  * That means that the back faces will not be shown.

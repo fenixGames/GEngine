@@ -15,8 +15,8 @@
 
 namespace GEngine {
     class Material;
+    class Texture;
     struct Pixmap;
-    union MaterialProp;
 };
 
 struct GEngine::Pixmap {
@@ -26,26 +26,18 @@ struct GEngine::Pixmap {
 
 #define TextureMap	std::map<GLenum, GLfloat *>
 #define MaterialMap TextureMap
+#define PixmapMap   std::map<GLenum, struct GEngine::Pixmap *>
 
 /**
  * A material used to print some figure.
- * The figure should give the mapping between world
- * coordinates and texture coordinates.
  */
 class GEngine::Material {
     private:
-		void readBmpFile(const char * filename);
-		static TextureMap * texDefs;
         static MaterialMap * matDefs;
+    protected:
+        MaterialMap material;
     public:
-        enum GEmaterial {
-            GL_SOLID_COLOR = 0,
-            GL_FROM_LIGHT_PARAMS,
-            GL_FROM_FILE,
-            GL_FROM_PIXELMAP
-        };
-        Material(GEmaterial type, void * data);
-		~Material();
+        Material();
 
 		/* Activates/Deactivates this texture for 
 		 * printing. */
@@ -53,15 +45,30 @@ class GEngine::Material {
 		void deactivate();
 
 		/* Sets a property for the texture/material. */
-		void setTexProperty(GLenum prop, float * value);
         void setMatProperty(GLenum prop, float * values);
-    protected:
-        GEmaterial type;
-        struct Pixmap texture;
-		unsigned buffer;
-		TextureMap properties;
-        MaterialMap material;
 };
 
+/**
+ * A texture used to make a figure have a different aspect.
+ */
+class GEngine::Texture {
+    private:
+        void readBmpFile(const char *filename);
+        static TextureMap * texDefs;
+    protected:
+        PixmapMap pixmaps;
+        unsigned buffer;
+        TextureMap properties;
+    public:
+        Texture();
+        ~Texture();
+
+        /* Activates/Deactivates the texture. */
+        void activate();
+        void deactivate();
+
+        /* Sets a property for the texture/Material.*/
+        void setTexProperty(GLenum prop, float * values);
+};
 #endif
 
