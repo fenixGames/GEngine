@@ -16,30 +16,13 @@
 
 /**
  * Creates the matrix with the fixed rows and columns and taking the rest of arguments from the va_list.
- *
- * @param unsigned  rows    The number of rows for the matrix.
- * @param unsigned  cols    The number of columns for the matrix.
  */
-Matrix::Matrix(unsigned int rows, unsigned int cols, ...)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>::Matrix(const double ** values)
 {
-    va_list list;
-    unsigned int idx, idy;
-    double  item;
-
-    nrows = rows;
-    ncolumns = cols;
-
-	matrix = new std::vector<double>(rows * cols, 0.0);
-
-    /* Going through the list of arguments and storing the values. */
-    va_start(list, cols);
-    for (idx = 0; idx < nrows; idx++) {
-	    for (idy = 0; idy < ncolumns; idy++) {
-			item = va_arg(list, double);
-			setElement(idx, idy, item);
-		}
-	}
-	va_end(list);
+    for (int idx = 0; idx < nrows && values; idx++)
+        for (int idy = 0; idy < ncolumns && values[idx]; idx++)
+            matrix[idx * ncolumns + idx] = values[idx][idy];
 }
 
 /**
@@ -49,25 +32,10 @@ Matrix::Matrix(unsigned int rows, unsigned int cols, ...)
  *
  * @return	The new matrix.
  */
-Matrix::Matrix(const Matrix& mat)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>::Matrix(const Matrix<nrows, ncolumns>& mat)
 {
-	unsigned int idx, idy;
-
-	nrows = mat.nrows;
-	ncolumns = mat.ncolumns;
-
-	matrix = new std::vector<double>(nrows * ncolumns);
-
-	/* Setting the new values. */
-	for (idx = 0; idx < nrows; idx++)
-		for (idy = 0; idy < ncolumns; idy++)
-			setElement(idx, idy, mat.getElement(idx, idy));
-
-}
-
-Matrix::~Matrix()
-{
-	delete matrix;
+	matrix = std::array<double, nrows * ncolumns>(mat.elements);
 }
 
 /**
@@ -78,8 +46,9 @@ Matrix::~Matrix()
  *
  * @return  The element in that position.
  */
+template <size_t nrows, size_t ncolumns>
 double
-Matrix::getElement(unsigned int row, unsigned int col) const
+Matrix<nrows, ncolumns>::getElement(unsigned int row, unsigned int col) const
 {
     if (row >= nrows || col >= ncolumns)
         return 0.0;
@@ -95,18 +64,12 @@ Matrix::getElement(unsigned int row, unsigned int col) const
  *
  * @return  The new Matrix if the size of the matrices are the right one or an empty matrix otherwise.
  */
-Matrix  
-Matrix::operator + (const Matrix m1)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>
+Matrix<nrows, ncolumns>::operator + (const Matrix<nrows, ncolumns> m1)
 {
-    Matrix m3;
+    Matrix<nrows, ncolumns> m3;
     unsigned int idx, idy;
-
-    /* Check sizes. */
-    if (m1.nrows != nrows || ncolumns != m1.ncolumns)
-        return m3;
-
-	m3.nrows = nrows;
-	m3.ncolumns = ncolumns;
 
 	/* Adding the matrices and storing the result in the new one. */
 	for (idx = 0; idx < nrows; idx++) {
@@ -124,18 +87,12 @@ Matrix::operator + (const Matrix m1)
  *
  * @return  The new Matrix if the size of the matrices are the right one or an empty matrix otherwise.
  */
-Matrix  
-Matrix::operator - (const Matrix m1)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>
+Matrix<nrows, ncolumns>::operator - (const Matrix<nrows, ncolumns> m1)
 {
-    Matrix m3;
+    Matrix<nrows, ncolumns> m3;
     unsigned int idx, idy;
-
-    /* Check sizes. */
-    if (m1.nrows != nrows || ncolumns != m1.ncolumns)
-        return m3;
-
-	m3.nrows = nrows;
-	m3.ncolumns = ncolumns;
 
 	/* Adding the matrices and storing the result in the new one. */
 	for (idx = 0; idx < nrows; idx++) {
@@ -154,25 +111,19 @@ Matrix::operator - (const Matrix m1)
  * @param   Matrix  m2  The matrix to be multiplied which size is M x O.
  * @return  The result of the product or NULL if they cannot be multiplied.
  */
-Matrix 
-Matrix::operator * (const Matrix m2)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>
+Matrix<nrows, ncolumns>::operator * (const Matrix<ncolumns, nrows> m2)
 {
     Matrix * m3 = new Matrix();
     unsigned int idx, idy, idz;
     double value;
 
-    /* Checking the dimensions. */
-    if (ncolumns != m2.nrows)
-        return * m3;
-
-    m3->nrows = nrows;
-    m3->ncolumns = m2.ncolumns;
-	m3->matrix = new std::vector<double>(m3->nrows * m3->ncolumns);
+	m3->matrix = std::array<double, nrows * ncolumns>();
 
     /* Creating the new matrix. */
-    for (idx = 0; idx < m3->nrows; idx++) {
-        for (idy = 0; idy < m3->ncolumns; idy++) {
-            /* m3(idx, idy) = sum(k, 0, M, matrix(idx, k) * matrix(k, idy)) */
+    for (idx = 0; idx < nrows; idx++) {
+        for (idy = 0; idy < ncolumns; idy++) {
             value = 0.0;
             for (idz = 0; idz < ncolumns; idz++)
                 value += getElement(idx, idz) * m2.getElement(idz, idy);
@@ -189,15 +140,14 @@ Matrix::operator * (const Matrix m2)
  * @param   double  value   The value to be multiplied to each element of the matrix.
  * @return  The resulting matrix.
  */
-Matrix 
-Matrix::operator * (double value)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>
+Matrix<nrows, ncolumns>::operator * (double value)
 {
     Matrix result;
     unsigned int idx, idy;
 
-    result.nrows        = nrows;
-    result.ncolumns     = ncolumns;
-	result.matrix		= new std::vector<double>(result.nrows * result.ncolumns);
+	result.matrix		= std::array<double, nrows * ncolumns>();
 
     /* Calculating the elements of the matrix. */
     for (idx = 0; idx < nrows; idx++)
@@ -216,18 +166,14 @@ Matrix::operator * (double value)
  *
  * @return	The new vector.
  */
-Vector
-Matrix::operator * (const Vector vect)
+template <size_t nrows, size_t ncolumns>
+Vector<nrows>
+Matrix<nrows, ncolumns>::operator * (const Vector<ncolumns> vect)
 {
-	Vector	result;
+	Vector<ncolumns>	result;
 	unsigned int idx, idy;
 
-	/* Checking the sizes. */
-	if (ncolumns != vect.nelem)
-		return result;
-
-	result.nelem = nrows;
-	result.elements = new std::vector<double>(nrows);
+	result.elements = std::array<double, nrows>();
 	/* Multipling ... */
 	for (idx = 0; idx < nrows; idx++) {
 		(* result.elements)[idx] = 0;
@@ -245,23 +191,11 @@ Matrix::operator * (const Vector vect)
  * @param	Matrix	mat	The matrix to copy.
  * @return	The new matrix.
  */
-Matrix&
-Matrix::operator = (const Matrix& mat)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>&
+Matrix<nrows, ncolumns>::operator = (const Matrix& mat)
 {
-	unsigned int idx, idy;
-
-	/* Empty the current matrix. */
-	matrix->clear();
-
-	/* Resize it. */
-	matrix->resize(mat.nrows * mat.ncolumns);
-	nrows = mat.nrows;
-	ncolumns = mat.ncolumns;
-
-	/* Set the new elements. */
-	for (idx = 0; idx < nrows; idx++)
-		for (idy = 0; idy < ncolumns; idy++)
-			setElement(idx, idy, mat.getElement(idx, idy));
+    matrix = std::array<double, nrows * ncolumns>(mat.matrix);
 
 	return * this;
 }
@@ -271,15 +205,14 @@ Matrix::operator = (const Matrix& mat)
  *
  * @return  The transponse of the matrix.
  */
-Matrix
-Matrix::transponse()
+template <size_t nrows, size_t ncolumns>
+Matrix<ncolumns, nrows>
+Matrix<nrows, ncolumns>::transponse()
 {
     Matrix trans;
     unsigned int idx, idy;
 
-    trans.nrows     = ncolumns;
-    trans.ncolumns  = nrows;
-	trans.matrix	 = new std::vector<double>(trans.nrows * trans.ncolumns);
+	trans.matrix	 = std::array<double, nrows * ncolumns>();
 
     /* Setting the elements. */
     for (idx = 0; idx < trans.nrows; idx++)
@@ -296,20 +229,14 @@ Matrix::transponse()
  *
  * @return The adjoint matrix.
  */
-Matrix
-Matrix::getAdjoint(unsigned int row, unsigned int col) const
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows - 1, ncolumns - 1>
+Matrix<nrows, ncolumns>::getAdjoint(unsigned int row, unsigned int col) const
 {
     unsigned int idx, idy, ida;
     Matrix adj;
 
-    /* Checking the size. */
-    if (nrows != ncolumns)
-        return adj;
-
-    adj.nrows       = nrows - 1;
-    adj.ncolumns    = ncolumns - 1;
-
-	adj.matrix = new std::vector<double>(adj.nrows * adj.ncolumns);
+	adj.matrix = std::array<double, (nrows - 1) * (ncolumns - 1)>();
     /* Getting the adjoint matrix. */
     for (idx = 0, ida = 0; idx < nrows; idx++) {
         for (idy = 0; idy < ncolumns; idy++) {
@@ -328,8 +255,9 @@ Matrix::getAdjoint(unsigned int row, unsigned int col) const
  *
  * @return The determinant.
  */
+template <size_t nrows, size_t ncolumns>
 double
-Matrix::determinant() const
+Matrix<nrows, ncolumns>::determinant() const
 {
     double value = 0.0, mod = 1.0;
     unsigned int  fixed;
@@ -360,8 +288,9 @@ Matrix::determinant() const
  *
  * @return The invert of the matrix.
  */
-Matrix
-Matrix::invert()
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>
+Matrix<nrows, ncolumns>::invert()
 {
     Matrix invert, cof, trans;
     double det = determinant(), mod = 1.0;
@@ -371,9 +300,7 @@ Matrix::invert()
     if (det == 0)
         return * (new Matrix());
 
-    cof.nrows = nrows;
-    cof.ncolumns = ncolumns;
-	cof.matrix = new std::vector<double>(cof.nrows * cof.ncolumns);
+	cof.matrix = std::array<double, nrows * ncolumns>();
     for (idx = 0; idx < nrows; idx++)
         for (idy = 0; idy < ncolumns; idy++) {
             cof.setElement(idx, idy, getAdjoint(idx, idy).determinant() * mod);
@@ -396,8 +323,9 @@ Matrix::invert()
  * @param unsigned  col     The column where the element must be stored.
  * @param double    value   The value to store.
  */
+template <size_t nrows, size_t ncolumns>
 void
-Matrix::setElement(unsigned int row, unsigned int col, double value)
+Matrix<nrows, ncolumns>::setElement(unsigned int row, unsigned int col, double value)
 {
     if (row >= nrows || col >= ncolumns)
         return;
@@ -405,8 +333,9 @@ Matrix::setElement(unsigned int row, unsigned int col, double value)
     (*matrix)[(row * ncolumns) + col] = value;
 }
 #ifdef DEBUG
+template <size_t nrows, size_t ncolumns>
 void
-Matrix::print() const
+Matrix<nrows, ncolumns>::print() const
 {
     unsigned int idx, idy;
 
@@ -427,19 +356,18 @@ Matrix::print() const
  *
  * @return 	The identity matrix.
  */
-Matrix
-Matrix::identity(int size)
+template <size_t nrows, size_t ncolumns>
+Matrix<nrows, ncolumns>
+Matrix<nrows, ncolumns>::identity()
 {
 	Matrix * mat = new Matrix();
 	int idx, idy;
 
-	mat->nrows = size;
-	mat->ncolumns = size;
-	mat->matrix = new std::vector<double>(size * size);
+	mat->matrix = std::array<double, nrows * ncolumns>();
 
 	/* Setting the values. */
-	for (idx = 0; idx < size; idx++)
-		for (idy = 0; idy < size; idy++)
+	for (idx = 0; idx < nrows; idx++)
+		for (idy = 0; idy < ncolumns; idy++)
 			mat->setElement(idx, idy, (idx == idy ? 1 : 0));
 
 	return * mat;

@@ -49,10 +49,7 @@ class GEngine::Camera {
 
         /* Sets the field of view for the camera. */
         void setFOV(double distance, double overture, double depth);
-
-        /* Gets the direction of the camera. */
-        Vector getDirection();
-};
+ };
 
 /**
  * Define a static camera.

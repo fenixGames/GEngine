@@ -18,6 +18,7 @@
 
 using namespace GEngine::Geometry;
 
+
 /**
  * The constructor of Figure initializes the solid variable to false.
  */
@@ -177,10 +178,10 @@ StaticFigure::motion(double time_stamp)
 /**
  * Constructor of the face.
  */
-Face::Face(PointList * list, Vector * n)
+Face::Face(PointList * list, Vector<3> * n)
 {
     vertex = new PointList( *list);
-    normal = new Vector(*n);
+    normal = new Vector<3>(*n);
 }
 
 /**
@@ -203,19 +204,37 @@ Face::transform(GLint center[3], GLfloat angles[3])
 {
     PointList::iterator     iter;
     PointList   newVert;
-    Vector  in, out;
-    Matrix  roll(3, 3,
-                    cos(angles[0]), -sin(angles[0]), 0.0,
-                    sin(angles[0]), cos(angles[0]), 0.0,
-                    0.0, 0.0, 1.0),
-            pitch(3, 3,
-                    cos(angles[1]), 0.0, sin(angles[1]),
-                    0.0, 1.0, 0.0,
-                    -sin(angles[1]), 0.0, cos(angles[1])),
-            yaw(3, 3,
-                    1.0, 0.0, 0.0,
-                    0.0, cos(angles[2]), -sin(angles[2]),
-                    0.0, sin(angles[2]), cos(angles[2])), rotation;
+    Vector<3>  in, out;
+    Matrix<3, 3>  roll, pitch, yaw, rotation;
+        
+    roll.setElement(0, 0, cos(angles[0]));
+    roll.setElement(0, 1, -sin(angles[0]));
+    roll.setElement(0, 2, 0.0);
+    roll.setElement(1, 0, sin(angles[0]));
+    roll.setElement(1, 1, cos(angles[0]));
+    roll.setElement(1, 2, 0.0);
+    roll.setElement(2, 0, 0.0);
+    roll.setElement(2, 1, 0.0);
+    roll.setElement(2, 1, 1.0);
+    pitch.setElement(0, 0, cos(angles[1]));
+    pitch.setElement(0, 1, 0.0);
+    pitch.setElement(0, 2, sin(angles[1]));
+    pitch.setElement(1, 0, 0.0);
+    pitch.setElement(1, 1, 1.0);
+    pitch.setElement(1, 2, 0.0);
+    pitch.setElement(2, 0, -sin(angles[1]));
+    pitch.setElement(2, 1, 0.0);
+    pitch.setElement(2, 2, cos(angles[1]));
+    yaw.setElement(0, 0, 1.0);
+    yaw.setElement(0, 1, 0.0);
+    yaw.setElement(0, 2, 0.0);
+    yaw.setElement(1, 0, 0.0);
+    yaw.setElement(1, 1, cos(angles[2]));
+    yaw.setElement(1, 2, -sin(angles[2]));
+    yaw.setElement(2, 0, 0.0);
+    yaw.setElement(2, 1, sin(angles[2])); 
+    yaw.setElement(2, 2, cos(angles[2]));
+                    
 
     /* Setting the rotation matrix. */
     rotation = roll * yaw * pitch;
@@ -224,8 +243,10 @@ Face::transform(GLint center[3], GLfloat angles[3])
 #endif
     /* Going through all the points of the face. */
     for (iter = vertex->begin(); iter != vertex->end(); iter++) {
-        in = Vector(3, (*iter)->x - center[0],
-                (*iter)->y - center[1], (*iter)->z - center[2]);
+        in = Vector<3>();
+        in.setElement(0, (*iter)->x - center[0]);
+        in.setElement(1, (*iter)->y - center[1]);
+        in.setElement(2, (*iter)->z - center[2]);
         out = rotation * in;
 
         newVert.push_back(new Point(out[0] + center[0], out[1] + center[1], 
@@ -365,7 +386,7 @@ Arc::Arc(Point c, Point s, GLfloat a)
 FaceList *
 Arc::print()
 {
-    Vector dir(3, 0.0, 0.0, 1.0);
+    Vector<3> dir((double *)Z_dir);
     FaceList * list = new FaceList();
 
     list->push_back(Face(&vertices, &dir).transform(org, angle));
@@ -427,7 +448,7 @@ FaceList *
 Segment::print()
 {
     FaceList * list = new FaceList();
-    Vector dir(3, 0.0, 0.0, 1.0);
+    Vector<3> dir((double *) Z_dir);
 
     list->push_back(Face(&vertices, &dir).transform(org, angle));
 
@@ -501,7 +522,7 @@ FaceList *
 Polygon::print()
 {
     FaceList * list = new FaceList();
-    Vector dir(3, 0.0, 0.0, 1.0);
+    Vector<3> dir((double *) Z_dir);
 
     list->push_back(Face(&vertices, &dir).transform(org, angle));
     return list;
@@ -565,7 +586,7 @@ FaceList *
 EllArc::print()
 {
     FaceList *list = new FaceList();
-    Vector dir(3, 0.0, 0.0, 1.0);
+    Vector<3> dir((double *) Z_dir);
     
     list->push_back(Face(&vertices, &dir).transform(org, angle));
 

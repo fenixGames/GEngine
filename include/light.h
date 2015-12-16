@@ -38,7 +38,7 @@ class GEngine::Light {
         Light(Geometry::Point pos = Geometry::Point());
 
         /* Set a directional light. */
-        Light(Vector vect);
+        Light(Vector<3> vect);
 
         /* Sets the intensity. */
         void setIntensity(float amb_red = 0.5, float amb_green = 0.5, float amb_blue = 0.5,
@@ -49,7 +49,7 @@ class GEngine::Light {
         static void setAmbient(unsigned char red, unsigned char green, unsigned char blue);
 
         /* Sets the spot light properties. */
-        void setSpotLight(Vector dir, float dist, float ang);
+        void setSpotLight(Vector<3> dir, float dist, float ang);
 
         /* Sets the attenuation coefficients. */
         void setAttenuation(float constant, float linear, float cuadratic);

@@ -25,7 +25,7 @@ Light::Light(Point pos)
     setDefaults();
 }
 
-Light::Light(Vector vect)
+Light::Light(Vector<3> vect)
 {
     position[0] = vect[0];
     position[1] = vect[1];
@@ -85,7 +85,7 @@ Light::setIntensity(float ar, float ag, float ab, float dr, float dg,
  * @param   float   ang     The opening angle of the spot light.
  */
 void
-Light::setSpotLight(Vector dir, float dist, float ang)
+Light::setSpotLight(Vector<3> dir, float dist, float ang)
 {
     spDir[0] = dir[0]; spDir[1] = dir[1]; spDir[2] = dir[2];
 

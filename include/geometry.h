@@ -15,6 +15,8 @@
 #include "matrix.h"
 #include "material.h"
 
+static const double Z_dir[3] = { 0.0, 0.0, 1.0 };
+
 #define PointList 	std::list<Point *>
 #define MeshList	std::list<Mesh *>
 #define FaceList    std::list<Face *>
@@ -115,10 +117,10 @@ class GEngine::Geometry::StaticFigure : public GEngine::Geometry::Figure {
 class GEngine::Geometry::Face {
     public:
         PointList   * vertex;
-        Vector      * normal;
+        Vector<3>      * normal;
 
         /* Creates a new face using the list of points an the normal vector. */
-        Face(PointList * list, Vector * normal);
+        Face(PointList * list, Vector<3> * normal);
         ~Face();
 
         /* Applies the transformations to the face. */
@@ -261,10 +263,10 @@ class GEngine::Geometry::Rectangle : public GEngine::Geometry::Polygon {
 
 class GEngine::Geometry::Mesh {
 	public:
-		Vector	normal;
+		Vector<3>	normal;
 		Point	point;
 
-		Mesh(Vector vect, Point v);
+		Mesh(Vector<3> vect, Point v);
 		Mesh(const Mesh& mesh);
 		Mesh(Point points[3]);
 

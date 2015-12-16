@@ -15,33 +15,24 @@
 #include <stdio.h>
 #endif
 
+using namespace std;
+
 /**
  * Creates a vector with the indicated size.
  *
- * @param unsigned  nitems  The number of items of the vector.
+ * @param   double  * values    The array of values for the vector or NULL if none.
  */
-Vector::Vector(unsigned int nitems, ...)
+template <size_t N>
+Vector<N>::Vector(double * values)
 {
-    va_list list;
-    unsigned int idx;
-
-	elements = NULL;
-	if (nitems == 0)
-		return ;
-
-	elements = new std::vector<double>(nitems);
-	nelem = nitems;
-	va_start(list, nitems);
-	for (idx = 0; idx < nitems; idx++) {
-		(*elements)[idx] = va_arg(list, double);
-	}
-	va_end(list);
+    for (int idx = 0; idx < N && values; idx++)
+        elements[idx] = values[idx];
 }
 
-Vector::Vector(const Vector& vect)
+template <size_t N>
+Vector<N>::Vector(const Vector& vect)
 {
-	nelem = vect.nelem;
-	elements = new std::vector<double>(*vect.elements);
+	elements = new std::array<double, N>(*vect.elements);
 }
 /**
  * Adds two vector and creates a new one.
@@ -50,22 +41,17 @@ Vector::Vector(const Vector& vect)
  *
  * @return The resulting vector.
  */
-Vector
-Vector::operator + (const Vector v1)
+template <size_t N>
+Vector<N>
+Vector<N>::operator + (const Vector<N> v1)
 {
     Vector v2;
     unsigned int idx;
 
-    /* Checking the size. */
-    if (v1.nelem != nelem)
-        return v2;
-    
-    v2.nelem = nelem;
-    v2.elements = new std::vector<double>(v2.nelem);
+    v2.elements = std::array<double, N>(elements);
 
-    /* Adding the elements. */
-    for (idx = 0; idx < nelem; idx++)
-        (*v2.elements)[idx] = (*v1.elements)[idx] + (* elements)[idx];
+    for (idx = 0; idx < N; idx ++)
+        v2.elements[idx] += v1.elements[idx];
 
     return v2;
 }
@@ -77,23 +63,17 @@ Vector::operator + (const Vector v1)
  *
  * @return The resulting vector.
  */
-Vector
-Vector::operator - (const Vector v1)
+template <size_t N>
+Vector<N>
+Vector<N>::operator - (const Vector<N> v1)
 {
     Vector v2;
     unsigned int idx;
-
-    /* Checking the size. */
-    if (v1.nelem != nelem)
-        return v2;
     
-    v2.nelem = nelem;
-    v2.elements = new std::vector<double>(v2.nelem);
+    v2.elements = std::array<double, N>(elements);
 
-    /* Adding the elements. */
-    for (idx = 0; idx < nelem; idx++)
-        (* v2.elements)[idx] = (* v1.elements)[idx] - (* elements)[idx];
-
+    for (idx = 0; idx < N; idx ++)
+        v2.elements[idx] -= v1.elements[idx];
     return v2;
 }
 
@@ -104,18 +84,15 @@ Vector::operator - (const Vector v1)
  *
  * @return The scalar product.
  */
+template <size_t N>
 double
-Vector::operator * (Vector v1)
+Vector<N>::operator * (Vector<N> v1)
 {
     double value = 0.0;
     unsigned int idx;
 
-    /* Checking the size. */
-    if (nelem != v1.nelem)
-        return 0.0;
-
-    for (idx = 0; idx < nelem; idx++)
-        value += (* elements)[idx] * (*v1.elements)[idx];
+    for (idx = 0; idx < N; idx++)
+        value += elements[idx] * v1.elements[idx];
 
     return value;
 }
@@ -127,14 +104,15 @@ Vector::operator * (Vector v1)
  *
  * @return  The resulting vector.
  */
-Vector
-Vector::operator * (double value)
+template <size_t N>
+Vector<N>
+Vector<N>::operator * (double value)
 {
     Vector  v1 = Vector(*this);
     unsigned int idx;
 
-	for (idx = 0; idx < nelem; idx++)
-		(* v1.elements)[idx] = (* elements)[idx] * value;
+	for (idx = 0; idx < N; idx++)
+		v1.elements[idx] = elements[idx] * value;
 
     return v1;
 }
@@ -145,17 +123,14 @@ Vector::operator * (double value)
  * @param	Vector	vect	The old vector.
  * @return 	The newly generated vector.
  */
-Vector
-Vector::operator = (Vector vect)
+template <size_t N>
+Vector<N>
+Vector<N>::operator = (Vector<N> vect)
 {
-	nelem = vect.nelem;
-
 	if (elements != NULL)
 		delete elements;
 
-	elements = new std::vector<double>(nelem);
-    for (unsigned int idx = 0; idx < nelem; idx++)
-        (*elements)[idx] = vect.elements->at(idx);
+	elements = new std::array<double, N>(elements);
 
 	return *this;
 }
@@ -163,8 +138,9 @@ Vector::operator = (Vector vect)
 /**
  * An alias for getElement.
  */
+template <size_t N>
 double
-Vector::operator [] (unsigned int index) {
+Vector<N>::operator [] (unsigned int index) {
     return getElement(index);
 }
 
@@ -175,11 +151,12 @@ Vector::operator [] (unsigned int index) {
  *
  * @return	The required element.
  */
+template <size_t N>
 double
-Vector::getElement(unsigned int index)
+Vector<N>::getElement(unsigned int index)
 {
-	if (index < nelem)
-		return (* elements)[index];
+	if (index < N)
+		return elements[index];
 	else
 		return 0.0;
 }
@@ -190,19 +167,21 @@ Vector::getElement(unsigned int index)
  * @param   unsigned    index   The index of the element to set.
  * @param   double      value   The new value of the element.
  */
+template <size_t N>
 void
-Vector::setElement(unsigned int index, double value)
+Vector<N>::setElement(unsigned int index, double value)
 {
-    if (index > nelem)
+    if (index > N)
         return;
 
-    (*elements)[index] = value;
+    elements[index] = value;
 }
 
 /**
  * Destructor of the class.
  */
-Vector::~Vector()
+template <size_t N>
+Vector<N>::~Vector()
 {
 	delete elements;
 }
@@ -211,8 +190,9 @@ Vector::~Vector()
  * Calculates the modulus of the vector and returns it.
  * @return  The modulus of the vector.
  */
+template <size_t N>
 double
-Vector::mod()
+Vector<N>::mod()
 {
     return sqrt(getElement(0) * getElement(0) + getElement(1) * getElement(1) + 
             getElement(2) * getElement(2));
@@ -222,11 +202,12 @@ Vector::mod()
 /**
  * Prints the vector on the screen.
  */
+template <size_t N>
 void
-Vector::print() {
-    printf("Vector %d\n[", nelem);
+Vector<N>::print() {
+    printf("Vector %d\n[", N);
 
-    for(unsigned int idx = 0; idx < nelem; idx++)
+    for(unsigned int idx = 0; idx < N; idx++)
         printf(" %f,", elements->at(idx));
     printf("\b ]\n"); 
 }

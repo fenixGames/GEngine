@@ -18,6 +18,9 @@
 #ifndef _WORLD_H_
 #define _WORLD_H_
 
+#include <list>
+#include <vector>
+
 #include "geometry.h"
 #include "camera.h"
 #include "light.h"

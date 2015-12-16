@@ -90,34 +90,6 @@ Camera::deactivate()
 }
 
 /**
- * Gets the direction in which the camera is recording.
- * @return  The vector indicating where the camera is pointing to.
- */
-Vector
-Camera::getDirection()
-{
-    Vector dir(3, 0.0, 0.0, -1.0);
-    Matrix m_roll, m_yaw, m_pitch, rotation;
-
-    m_roll = Matrix(3, 3,
-            cos(roll * M_PI / 180.0), -sin(roll * M_PI / 180.0), 0.0,
-            sin(roll * M_PI / 180.0), cos(roll * M_PI / 180.0), 0.0,
-            0.0, 0.0, 1.0);
-    m_pitch = Matrix(3, 3,
-            cos(pitch * M_PI / 180.0), 0.0, sin(pitch * M_PI / 180.0),
-            0.0, 1.0, 0.0,
-            -sin(pitch * M_PI / 180.0), 0.0, cos(pitch * M_PI / 180.0));
-    m_yaw = Matrix(3, 3,
-            1.0, 0.0, 0.0,
-            0.0, cos(yaw * M_PI / 180.0), -sin(yaw * M_PI / 180.0),
-            0.0, sin(yaw * M_PI / 180.0), cos(yaw * M_PI / 180.0));
-
-    rotation = m_roll * m_pitch * m_yaw;
-
-    return rotation * dir;
-}
-
-/**
  * Sets the field of view for the camera. That means that the projection matrix will be
  * set acording to the FOV.
  * @param   double  distance    Distance from the camera to the front plane.
